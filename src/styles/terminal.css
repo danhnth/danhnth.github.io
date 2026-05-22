@@ -1,0 +1,229 @@
+/* ============================================================
+   CRT TERMINAL — Terminal Layout & Text Styles
+   ============================================================ */
+
+/* ── Full-Viewport Terminal Container ────────────────────── */
+.crt-terminal {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--crt-bg);
+  font-family: var(--crt-font-mono);
+  font-size: var(--crt-font-size-base);
+  line-height: var(--crt-terminal-line-height);
+  color: var(--crt-green);
+  z-index: var(--crt-z-terminal);
+}
+
+/* ── Terminal Output Area ────────────────────────────────── */
+.crt-terminal__output {
+  width: 100%;
+  height: calc(100vh - 3rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--crt-terminal-padding);
+  padding-bottom: var(--crt-space-2);
+  scroll-behavior: smooth;
+}
+
+/* ── Terminal Input Line ─────────────────────────────────── */
+.crt-terminal__input-line {
+  display: flex;
+  align-items: center;
+  padding: var(--crt-terminal-padding);
+  padding-top: var(--crt-space-2);
+  border-top: 1px solid var(--crt-green-dim);
+  background-color: var(--crt-bg-dark);
+  min-height: 3rem;
+}
+
+.crt-terminal__prompt {
+  color: var(--crt-green-bright);
+  font-family: var(--crt-font-mono);
+  font-size: var(--crt-font-size-base);
+  margin-right: var(--crt-terminal-prompt-gap);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.crt-terminal__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--crt-green);
+  font-family: var(--crt-font-mono);
+  font-size: var(--crt-font-size-base);
+  line-height: var(--crt-terminal-line-height);
+  caret-color: var(--crt-green);
+}
+
+.crt-terminal__input::placeholder {
+  color: var(--crt-dim);
+}
+
+/* ── Blinking Cursor ─────────────────────────────────────── */
+.crt-terminal__cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  background-color: var(--crt-green);
+  vertical-align: text-bottom;
+  animation: crt-cursor-blink 530ms step-end infinite;
+}
+
+@keyframes crt-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Output Line Types ───────────────────────────────────── */
+
+/* Default text */
+.output-text,
+.crt-line--text {
+  color: var(--crt-green);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Heading */
+.output-heading,
+.crt-line--heading {
+  color: var(--crt-heading);
+  font-size: var(--crt-font-size-xl);
+  font-weight: 700;
+  letter-spacing: var(--crt-letter-spacing);
+  margin-top: var(--crt-space-4);
+  margin-bottom: var(--crt-space-2);
+  text-shadow: var(--crt-shadow-glow-dim);
+}
+
+/* Error */
+.output-error,
+.crt-line--error {
+  color: var(--crt-error);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Success */
+.output-success,
+.crt-line--success {
+  color: var(--crt-success);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Dim */
+.output-dim,
+.crt-line--dim {
+  color: var(--crt-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ASCII art / box drawing */
+.output-ascii,
+.crt-line--ascii {
+  color: var(--crt-ascii);
+  font-size: var(--crt-font-size-sm);
+  line-height: var(--crt-line-height-tight);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Link */
+.output-link,
+.crt-line--link {
+  color: var(--crt-link);
+  text-decoration: underline;
+  text-decoration-color: var(--crt-link);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color var(--crt-transition-fast) ease;
+}
+
+.output-link:hover,
+.crt-line--link:hover {
+  color: var(--crt-link-hover);
+  text-decoration-color: var(--crt-link-hover);
+}
+
+/* ── ASCII Box Drawing ───────────────────────────────────── */
+.crt-ascii-box {
+  color: var(--crt-ascii);
+  font-size: var(--crt-font-size-sm);
+  line-height: var(--crt-line-height-tight);
+  white-space: pre;
+  display: inline-block;
+}
+
+.crt-ascii-box--border {
+  border: 1px solid var(--crt-ascii);
+  padding: var(--crt-space-2) var(--crt-space-4);
+}
+
+/* ── Selection Color ─────────────────────────────────────── */
+.crt-terminal ::selection {
+  background-color: var(--crt-selection-bg);
+  color: var(--crt-selection-text);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+.crt-terminal__output::-webkit-scrollbar {
+  width: 6px;
+}
+
+.crt-terminal__output::-webkit-scrollbar-track {
+  background: var(--crt-bg-dark);
+}
+
+.crt-terminal__output::-webkit-scrollbar-thumb {
+  background: var(--crt-green-dim);
+  border-radius: var(--crt-radius-sm);
+}
+
+.crt-terminal__output::-webkit-scrollbar-thumb:hover {
+  background: var(--crt-green);
+}
+
+/* Firefox scrollbar */
+.crt-terminal__output {
+  scrollbar-width: thin;
+  scrollbar-color: var(--crt-green-dim) var(--crt-bg-dark);
+}
+
+/* ── Accessibility: Reduced Motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .crt-terminal__cursor {
+    animation: none;
+    opacity: 1;
+  }
+
+  .crt-terminal__output {
+    scroll-behavior: auto;
+  }
+
+  .output-link,
+  .crt-line--link {
+    transition: none;
+  }
+}
+
+/* ── Accessibility: High Contrast ────────────────────────── */
+@media (prefers-contrast: high) {
+  .output-heading,
+  .crt-line--heading {
+    text-shadow: none;
+  }
+
+  .output-dim,
+  .crt-line--dim {
+    color: var(--crt-green);
+  }
+
+  .output-ascii,
+  .cr

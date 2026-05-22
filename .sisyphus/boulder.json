@@ -20,6 +20,15 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-05-22T20:32:58.181Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "Design System Tokens + Base Styles",
+      "session_id": "ses_1ae9a62fcffeCYhurB7B2cRKr9",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "updated_at": "2026-05-22T20:37:57.753Z"
     }
   }
 }

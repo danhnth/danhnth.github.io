@@ -296,7 +296,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: package.json, vite.config.ts, tsconfig.json, index.html, public/404.html, public/.nojekyll, .gitignore
   - Pre-commit: `npm run build`
 
-- [ ] 2. Design System Tokens + Base Styles
+- [x] 2. Design System Tokens + Base Styles
 
   **What to do**:
   - Create `src/styles/tokens.css` with CSS custom properties for the green phosphor CRT theme:
@@ -388,7 +388,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/styles/tokens.css, src/styles/reset.css, src/styles/terminal.css
   - Pre-commit: `npm run build`
 
-- [ ] 3. Type Definitions
+- [x] 3. Type Definitions
 
   **What to do**:
   - Create `src/types/index.ts` — re-exports all types
@@ -473,7 +473,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/types/index.ts, src/types/terminal.ts, src/types/commands.ts, src/types/boot.ts, src/types/effects.ts
   - Pre-commit: `npx tsc --noEmit`
 
-- [ ] 4. GPU Tier Detection + CRT Config Utility
+- [x] 4. GPU Tier Detection + CRT Config Utility
 
   **What to do**:
   - Create `src/utils/gpu-detect.ts`:
@@ -558,7 +558,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/utils/gpu-detect.ts, src/utils/index.ts
   - Pre-commit: `npx tsc --noEmit`
 
-- [ ] 5. Content Data Files
+- [x] 5. Content Data Files
 
   **What to do**:
   - Create `src/data/profile.ts` — name, title, location, university, bio text, social links
@@ -650,7 +650,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/data/profile.ts, src/data/projects.ts, src/data/skills.ts, src/data/certs.ts, src/data/contact.ts, src/data/index.ts
   - Pre-commit: `npx tsc --noEmit`
 
-- [ ] 6. Audio Manager with Deferred Playback
+- [x] 6. Audio Manager with Deferred Playback
 
   **What to do**:
   - Create `src/audio/audio-manager.ts`:

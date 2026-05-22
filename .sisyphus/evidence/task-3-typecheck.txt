@@ -1,0 +1,14 @@
+TypeScript type checking passed with zero errors.
+
+Command: npx tsc --noEmit
+Result: Exit code 0, no output (no errors)
+
+Files type-checked:
+- src/types/terminal.ts
+- src/types/commands.ts
+- src/types/boot.ts
+- src/types/effects.ts
+- src/types/index.ts
+- src/data/index.ts (placeholder)
+- src/main.ts
+- src/vite-env.d.ts

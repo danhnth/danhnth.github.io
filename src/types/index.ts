@@ -3,6 +3,7 @@ export type {
   TerminalEvent,
   OutputLine,
   CursorPosition,
+  Terminal,
 } from './terminal';
 
 export type {

@@ -1,56 +1,48 @@
-# Learnings & Conventions
 
-## Project Structure
-- Vite + TypeScript, no frameworks (React/Vue)
-- Custom DOM-based terminal (no xterm.js)
-- Green phosphor CRT theme (#33FF66)
-- All source in `src/`, public assets in `public/`
 
-## Code Conventions
-- Use TypeScript strict mode
-- No `any` types, no `@ts-ignore`
-- Modular architecture: separate data, types, commands, terminal, effects, audio, boot
-- All commands implement `Command` interface from `src/commands/types.ts`
-- All data imported from `src/data/`, never hardcoded in commands
+## Task 6: Audio Manager with Deferred Playback
 
-## CRT Effects
-- 3-tier GPU fallback: high (WebGL), low (CSS scanlines+vignette), minimal (CSS only)
-- WebGL shaders use `mediump` precision for mobile compat
-- Shader warmup during BIOS POST phase to avoid Safari stall
-- Respect `prefers-reduced-motion` and `prefers-contrast: more`
+- Created `src/audio/audio-manager.ts` with AudioManager singleton class
+  - `private context: AudioContext | null` — created on first gesture
+  - `private audioReady: boolean = false`
+  - `private muted: boolean = true`
+  - `private queue: Array<QueuedSound> = []`
+  - `initFromGesture()` — creates AudioContext, unmutes, drains queued sounds
+  - `isReady()`, `setMuted()`, `isMuted()`, `shouldShowMuteIndicator()`
+  - `onReadyChange(callback)` — observer pattern for UI integration
+  - Handles `NotAllowedError` from `AudioContext.resume()` gracefully
+  - `getContext()` exposed for sprite-loader and other consumers
+- Created `src/audio/oscillator.ts` with Web Audio API oscillator functions
+  - `playBeep(frequency, duration, volume?)` — sine-wave tone with exponential decay
+  - `playBootSequence()` — POST beep (~800 Hz, 100 ms)
+  - `playKeyUp()` — key click (~1200 Hz, 20 ms)
+  - All functions check `audioManager.isReady()` and queue if not ready
+- Created `src/audio/sprite-loader.ts` with sprite loading and playback
+  - `loadSprite(url)` — fetch + decodeAudioData
+  - `playSprite(buffer, offset?, duration?)` — BufferSourceNode playback
+  - `preload(sprites)` — batch preload for key-click sounds
+- Created `src/audio/index.ts` re-exporting all modules
+- Verification: `npx tsc --noEmit` zero errors, `npm run build` exit 0, lsp_diagnostics zero errors on all 4 files
 
-## Audio
-- NO audio before user gesture (browser autoplay policy)
-- AudioManager queues sounds before gesture, plays after `initFromGesture()`
-- Use Web Audio API (AudioContext), not `new Audio()` for synthesis
-
-## Accessibility
-- ARIA live region for screen reader announcements
-- `prefers-reduced-motion` disables all animations
-- `prefers-contrast: more` disables glow/bloom
-
-## Boot Sequence
-- 5 phases: BIOS POST → hardware detect → kernel load → init → login
-- Skip on revisit via `localStorage 'crt-boot-seen'`
-- Linear async/await, no state machine library
-
-## Mobile
-- Touch keyboard for mobile viewports (< 768px)
-- Cap GPU tier at `low` on mobile
-- Disable barrel distortion on touch-only devices
-- Minimum tap target 44px
-
-## Git
-- Commit after every task
-- Pre-commit: `npm run build` must pass
-- Commit message format: `feat(scope): description`
-
-## Task 1: Vite + TypeScript Scaffold
-- Created project scaffold manually (faster than `npm create vite`)
-- base: '/' in vite.config.ts for GitHub Pages user site
-- index.html title changed to "Nguyen Thanh Danh | Terminal"
-- Preserved meta tags (viewport, description, keywords) from original
-- JetBrains Mono font linked via Google Fonts
-- public/404.html has SPA redirect for GitHub Pages fallback
-- public/.nojekyll disables Jekyll processing
-- Build verified: exit 0, dist/index.html exists (1008 bytes)
+## Task 2: CRT Design System Tokens & Base Styles
+- Created `src/styles/tokens.css` with CSS custom properties:
+  - Colors: green (#33FF66), dim (#1a8033), bright (#66FF99), bg (#0a0a0a), bg-dark (#050505)
+  - Semantic colors: error (#FF3333), success, link, ascii, heading, dim
+  - Phosphor glow: spread (2px), color (rgba 0.6)
+  - Scanline: opacity (0.15), gap (2px)
+  - Flicker intensity (0.03), barrel curvature (0.02)
+  - Typography scale: xs through 3xl, JetBrains Mono font stack
+  - Spacing scale: 4px base (1-16 units)
+  - Z-index layers: base(1) → terminal(10) → scanlines(20) → cursor(30) → overlay(40) → modal(50)
+- Created `src/styles/reset.css`: box-sizing, margin reset, font smoothing, inherited fonts for form elements
+- Created `src/styles/terminal.css`:
+  - Full-viewport terminal container (fixed, 100vw × 100vh, overflow hidden)
+  - Scrollable output area with custom scrollbar (green thumb on dark track)
+  - Input line with prompt character and blinking cursor animation
+  - All 7 OutputLine types styled: text, heading, error, success, dim, ascii, link
+  - ASCII box drawing styles with border variant
+  - Selection color: green highlight on dark background
+  - `prefers-reduced-motion`: disables cursor blink, scroll-behavior, link transitions
+  - `prefers-contrast: high`: disables glow, brightens dim/ascii text
+- Import order in main.ts: reset → tokens → terminal
+- Build verified: tsc + vite build exit 0, 6 modules transformed
