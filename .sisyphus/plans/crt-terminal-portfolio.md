@@ -760,7 +760,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/audio/audio-manager.ts, src/audio/oscillator.ts, src/audio/sprite-loader.ts, src/audio/index.ts
   - Pre-commit: `npx tsc --noEmit`
 
-- [ ] 7. Terminal Engine Core (DOM-based)
+- [x] 7. Terminal Engine Core (DOM-based)
 
   **What to do**:
   - Create `src/terminal/terminal.ts` — main Terminal class:
@@ -868,7 +868,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/terminal/terminal.ts, src/terminal/input-line.ts, src/terminal/output-buffer.ts, src/terminal/cursor.ts, src/terminal/aria-live.ts, src/terminal/index.ts
   - Pre-commit: `npm run build`
 
-- [ ] 8. Command Registry + Plugin System
+- [x] 8. Command Registry + Plugin System
 
   **What to do**:
   - Create `src/commands/registry.ts` — CommandRegistry class with register(), execute(), getByName(), getAll(), getCompletions()
@@ -929,7 +929,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/commands/registry.ts, src/commands/plugin.ts, src/commands/types.ts, src/commands/index.ts
   - Pre-commit: `npx tsc --noEmit`
 
-- [ ] 9. CRT Effects Pipeline (WebGL + CSS Fallback)
+- [x] 9. CRT Effects Pipeline (WebGL + CSS Fallback)
 
   **What to do**:
   - Create `src/effects/crt-manager.ts` — CRTEffectsManager: detects GPU tier, initializes appropriate effects path, enable/disable/updateConfig methods, respects prefers-reduced-motion and prefers-contrast
@@ -1005,7 +1005,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/effects/crt-manager.ts, src/effects/webgl-pipeline.ts, src/effects/shader-source.ts, src/effects/css-fallback.css, src/effects/effects-bridge.ts, src/effects/index.ts
   - Pre-commit: `npm run build`
 
-- [ ] 10. Boot Sequence (5 Phases + Shader Warmup)
+- [x] 10. Boot Sequence (5 Phases + Shader Warmup)
 
   **What to do**:
   - Create `src/boot/boot-sequence.ts` — BootSequence orchestrator: async/await linear progression, run()/skip() methods, checks localStorage 'crt-boot-seen' flag (skip=resume animation), calls warmupShaders() during BIOS

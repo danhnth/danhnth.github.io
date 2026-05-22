@@ -1,0 +1,104 @@
+/* ============================================================
+   CRT Terminal — CSS-Only Fallback Effects
+   For low/minimal GPU tiers and devices without WebGL.
+   All values controlled via CSS custom properties from tokens.css
+   ============================================================ */
+
+/* ── Terminal Container with CSS Effects ─────────────────── */
+.crt-effects--css {
+  position: relative;
+}
+
+.crt-effects--css::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--crt-z-scanlines, 20);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent var(--crt-scanline-gap, 2px),
+    rgba(0, 0, 0, var(--crt-scanline-opacity, 0.15)) var(--crt-scanline-gap, 2px),
+    rgba(0, 0, 0, var(--crt-scanline-opacity, 0.15)) calc(var(--crt-scanline-gap, 2px) * 2)
+  );
+  background-size: 100% calc(var(--crt-scanline-gap, 2px) * 2);
+}
+
+.crt-effects--css::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--crt-z-scanlines, 20);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+/* ── Curvature Illusion ──────────────────────────────────── */
+.crt-effects--css {
+  border-radius: 2%;
+  box-shadow:
+    inset 0 0 80px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Flicker Animation ───────────────────────────────────── */
+@keyframes crt-flicker {
+  0% { opacity: 1; }
+  50% { opacity: calc(1 - var(--crt-flicker-intensity, 0.03)); }
+  100% { opacity: 1; }
+}
+
+.crt-effects--css--flicker {
+  animation: crt-flicker 0.1s infinite;
+}
+
+/* ── Low Tier: Reduced Effects ───────────────────────────── */
+.crt-effects--css--low::before {
+  opacity: 0.5;
+}
+
+.crt-effects--css--low::after {
+  opacity: 0.5;
+}
+
+.crt-effects--css--low.crt-effects--css--flicker {
+  animation: none;
+}
+
+/* ── Minimal Tier: Bare Minimum ──────────────────────────── */
+.crt-effects--css--minimal::before,
+.crt-effects--css--minimal::after {
+  display: none;
+}
+
+.crt-effects--css--minimal {
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.crt-effects--css--minimal.crt-effects--css--flicker {
+  animation: none;
+}
+
+/* ── Accessibility: Reduced Motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .crt-effects--css--flicker {
+    animation: none !important;
+  }
+}
+
+/* ── Accessibility: High Contrast ──────────────────────────── */
+@media (prefers-contrast: high) {
+  .crt-effects--css::before {
+    opacity: 0.05;
+  }
+
+  .crt-effects--css::after {
+    opacity: 0.2;
+  }
+}

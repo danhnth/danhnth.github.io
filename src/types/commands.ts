@@ -36,7 +36,7 @@ export interface PluginManifest {
 
 export interface CommandRegistry {
   register(cmd: Command): void;
-  execute(name: string, args: string[]): Promise<CommandResult>;
+  execute(name: string, args: string[], context: CommandContext): Promise<CommandResult>;
   getByName(name: string): Command | undefined;
   getAll(): Command[];
   getCompletions(prefix: string): string[];

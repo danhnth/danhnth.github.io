@@ -46,3 +46,169 @@
   - `prefers-contrast: high`: disables glow, brightens dim/ascii text
 - Import order in main.ts: reset → tokens → terminal
 - Build verified: tsc + vite build exit 0, 6 modules transformed
+
+## Task 14: Deferred Audio Manager (Refined)
+- Date: 2026-05-23
+- AudioManager queue changed from `QueuedSound[]` to `Array<() => void>` for simpler deferred execution
+- `playWhenReady(fn: () => void)` added — plays immediately if ready, otherwise queues the callback
+- `initFromGesture()` now wraps `context.resume()` in a promise to properly handle `NotAllowedError`
+- Oscillator functions (`playBeep`, `playBootSequence`, `playKeyUp`, `playEnter`) each create a closure and use `playWhenReady()` for deferred playback
+- `playEnter()` added (~600Hz, 50ms) for enter key feedback
+- `preloadSprites(urls: string[])` replaces `preload(sprites)` — uses `Promise.all()` for parallel loading, preserving order
+- All files pass `tsc --noEmit` and `npm run build` (exit 0)
+
+## Task 9: CRT Effects Pipeline with WebGL Shaders and CSS Fallback
+- Date: 2026-05-23
+- Created `src/effects/shader-source.ts` with all GLSL shader code as TypeScript exports:
+  - `vertexShaderSource` — simple pass-through with position and texCoord attributes
+  - `fragmentShaderScanlines` — horizontal scanline pattern with configurable intensity
+  - `fragmentShaderBloom` — 3x3 Gaussian blur approximation with luminance masking
+  - `fragmentShaderDistortion` — barrel distortion + chromatic aberration
+  - `fragmentShaderComposite` — combines all effects with animation timing (time, resolution, scanlines, bloom, curvature, chromatic aberration, flicker, vignette)
+  - All shaders use `precision mediump float` for mobile compatibility
+- Created `src/effects/webgl-pipeline.ts` with `WebGLPipeline` class:
+  - Creates WebGL context with alpha, no antialias, no preserveDrawingBuffer
+  - Compiles and links vertex + fragment shaders
+  - Creates fullscreen quad buffers (position + texCoord)
+  - Caches uniform locations for performance
+  - `resize(width, height)` — updates canvas dimensions with DPR clamped to 2
+  - `updateTexture(source)` — uploads image/canvas to WebGL texture
+  - `start()` / `stop()` — animation loop with requestAnimationFrame
+  - `updateConfig(config)` / `setIntensity(level)` — dynamic uniform updates
+  - `dispose()` — cleans up all WebGL resources and loses context
+- Created `src/effects/css-fallback.css` with CSS-only CRT effects:
+  - `.crt-fallback-overlay` — scanlines via `repeating-linear-gradient`, vignette via `radial-gradient`
+  - `.crt-fallback-border` — screen curvature illusion via `border-radius` and `box-shadow`
+  - `.crt-fallback-flicker` — subtle brightness animation via `@keyframes`
+  - `.crt-fallback-low` / `.crt-fallback-minimal` — tier-specific reduction
+  - Respects `prefers-reduced-motion` (disables flicker) and `prefers-contrast: high` (reduces overlay opacity)
+  - All values controlled via CSS custom properties from `tokens.css`
+- Created `src/effects/effects-bridge.ts` with `EffectsBridge` class:
+  - Connects WebGL pipeline to terminal DOM element
+  - Positions overlay canvas absolutely behind terminal content (`z-index: var(--crt-z-scanlines)`)
+  - Uses `ResizeObserver` (with window.resize fallback) for dimension updates
+  - `enable()` / `disable()` / `toggle()` — controls rendering state
+  - `setIntensity(level)` / `updateConfig(config)` — proxies to WebGLPipeline
+  - `dispose()` — removes overlay, disconnects observer, cleans up pipeline
+- Created `src/effects/crt-manager.ts` with `CRTEffectsManager` class:
+  - `detectGPUTier()` on construction to determine high/low/minimal tier
+  - `getCRTConfig(tier)` for tier-appropriate defaults
+  - High tier → `EffectsBridge` with WebGL pipeline; low/minimal → CSS fallback classes
+  - Respects `prefers-reduced-motion: reduce` — disables all effects entirely
+  - Respects `prefers-contrast: more` — `getCRTConfig()` disables bloom/glow
+  - Media query listeners for dynamic accessibility preference changes
+  - `enable()` / `disable()` / `toggle()` / `setIntensity(level)` / `updateConfig(config)`
+  - `getTier()` / `getConfig()` / `isEffectsEnabled()` — state inspection
+  - `dispose()` — full cleanup of bridge and CSS classes
+- Created `src/effects/index.ts` re-exporting all modules
+- Verification: `lsp_diagnostics` zero errors on all 6 new files
+- Note: `npm run build` fails due to pre-existing TypeScript errors in `src/boot/phases/` (bios-post.ts, hardware-detect.ts) and `src/commands/` — out of scope for this task
+
+## Task 9 Update: Refactored to Match Requirements
+- Date: 2026-05-23
+- Updated `src/effects/shader-source.ts` to use exact export names required: vertexShaderSource, fragmentShaderScanlines, fragmentShaderBloom, fragmentShaderDistortion, fragmentShaderComposite
+- Updated `src/effects/css-fallback.css` to use `.crt-effects--css` class on terminal container instead of separate overlay elements
+- Rewrote `src/effects/webgl-pipeline.ts`: WebGLPipeline now creates its own canvas, has public `render(time)`, `destroy()`, handles WebGL context loss gracefully
+- Rewrote `src/effects/effects-bridge.ts`: EffectsBridge now has `attach(terminalElement)`, `detach()`, `handleResize()` methods
+- Rewrote `src/effects/crt-manager.ts`: CRTEffectsManager now takes (tier, config) in constructor, has `initialize()`, `updateConfig(config)`, `destroy()` methods, uses new CSS class names
+- Fixed pre-existing TypeScript errors in `src/boot/phases/` files (incorrect import paths, unused imports) to make `npm run build` pass
+- Verification: `npx tsc --noEmit` passes with zero errors; `npm run build` passes successfully
+
+## Task 7: DOM-based Terminal Engine Core
+- Date: 2026-05-23
+- Created `src/terminal/cursor.ts` with `Cursor` class:
+  - Blinking block cursor with 530ms default interval
+  - `onTyping()` pauses blink, resumes after 1s inactivity
+  - `setStyle('block' | 'line')` switches between shell (green block) and boot (dim line) modes
+  - `setVisible(boolean)` show/hide
+  - `destroy()` cleans up intervals
+- Created `src/terminal/aria-live.ts` with `AriaLive` class:
+  - Visually hidden `aria-live="polite"` region for screen reader announcements
+  - `setPrefix()` for boot phase context (e.g., "Boot: ")
+  - `announce()` / `announceLines()` for output text
+  - Clears content after 150ms to allow repeated identical messages
+- Created `src/terminal/output-buffer.ts` with `OutputBuffer` class:
+  - Renders `OutputLine` objects into a scrollable `div`
+  - Maps all 7 types to CSS classes: text, heading, error, success, dim, ascii, link
+  - Link type renders as `<a>` element with target="_blank"
+  - `append()` adds lines and auto-scrolls to bottom via `requestAnimationFrame`
+  - `clear()` wipes the buffer
+- Created `src/terminal/input-line.ts` with `InputLine` class:
+  - Renders prompt `guest@danhnth:~$ ` in green + input text + blinking cursor
+  - Keyboard handling: character input, backspace, delete, arrow keys, home, end, escape
+  - Command history: up/down arrows navigate last 100 commands stored in localStorage
+  - Tab completion: cycles through matching command names from registry
+  - `handleKey()` delegates all keyboard events
+  - `focus()`, `clearInput()`, `getValue()`, `setValue()`, `destroy()` public methods
+- Created `src/terminal/terminal.ts` with `Terminal` class implementing `Terminal` interface:
+  - Full-viewport container (100vw × 100vh, overflow hidden, black bg)
+  - Composes OutputBuffer, InputLine, AriaLive into single DOM tree
+  - `mount(parent)` attaches to DOM and focuses
+  - `writeOutput(lines)` appends output and announces to screen readers
+  - `clear()` wipes output buffer
+  - `focus()` keeps terminal focused
+  - `setState()` / `getState()` for idle/booting/ready/processing states
+  - `setRegistry()` injects command registry for execution pipeline
+  - Command execution: parse input → find in registry → execute handler → render output
+  - Echoes commands before execution, handles errors gracefully
+  - Focus management: blur refocuses, click on terminal focuses
+  - Keyboard capture at container level, delegates to InputLine
+- Created `src/terminal/index.ts` re-exporting all modules
+- Verification: `npx tsc --noEmit` zero errors, `npm run build` exit 0
+- Note: During work, pre-existing files in `src/boot/` and `src/commands/` were found with TypeScript errors (missing `.ts` extensions, wrong import paths, unused variables). Fixed these to make the build pass.
+
+
+## Task 10: OS Boot Sequence with 5 Phases and Shader Warmup
+- Date: 2026-05-23
+- Created src/boot/warmup.ts: re-exports warmupShaders() from ../utils/gpu-detect for convenience
+- Created src/boot/phases/bios-post.ts with iosPostPhase(terminal):
+  - ASCII art logo 'DANHNTH SYSTEMS' rendered as scii type lines
+  - Memory count animation: 0 to 16,384K in steps of 128K with 30ms delay
+  - CPU detection: 'Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz'
+  - Hardware device list: Keyboard, Mouse, Primary Master/Slave, CD-ROM, USB, Network — all [OK]
+  - POST beep via udioManager.playWhenReady(() => playBootSequence()) — deferred until user gesture
+  - Calls warmupShaders() during memory count to avoid Safari stall
+  - Duration: ~4 seconds
+- Created src/boot/phases/hardware-detect.ts with hardwareDetectPhase(terminal):
+  - 'Detecting IDE drives...' section with 2 fake drives (WDC, Samsung SSD)
+  - 'Detecting network interfaces...' section with eth0, wlan0, lo
+  - 'Detecting peripheral devices...' section with USB buses, ACPI, PCI
+  - All devices report [OK] status
+  - Duration: ~3 seconds
+- Created src/boot/phases/kernel-load.ts with kernelLoadPhase(terminal):
+  - 'Loading kernel...' heading
+  - Version string: 'Linux version 6.8.0-danhnth-generic'
+  - 20 driver initialization messages scrolling by
+  - 1 cosmetic [FAILED] message ('nvme nvme0: missing interrupt handler') for flavor
+  - Duration: ~5 seconds
+- Created src/boot/phases/init-system.ts with initSystemPhase(terminal):
+  - 'Starting services...' heading
+  - 10 service startup lines in 'Starting X... [OK]' format
+  - Includes 'Starting network daemon... [OK]' and 'Starting security module... [OK]'
+  - Duration: ~3 seconds
+- Created src/boot/phases/login.ts with loginPhase(terminal):
+  - Derives login name from profile.email split at '@' (falls back to 'guest')
+  - Auto-types 'guest' username character by character after 'danhnth login: '
+  - Auto-types 8 password dots after 'Password: '
+  - 'Login successful' + 'Welcome to DANHNTH Systems, Nguyen Thanh Danh.'
+  - Duration: ~3 seconds
+- Created src/boot/boot-sequence.ts with BootSequence class:
+  - Async/await linear progression (NO state machine library)
+  - un(): Promise<void> — checks localStorage 'crt-boot-seen' flag
+    - If present: plays brief 2-second 'system resume' animation
+    - If absent: plays full 5-phase boot and sets the flag
+  - skip(): void — sets skipped flag, phases check it and break early
+  - Emits events: 'boot:start', 'boot:phase', 'boot:complete' via Map-based event emitter
+  - on(event, callback) / off(event, callback) for subscription management
+  - getCurrentPhase() / isRunning() for state inspection
+  - Calls warmupShaders() during BIOS POST phase
+  - Uses BootStep[] array matching the BootStep interface from types
+- Created src/boot/index.ts re-exporting all modules
+- All phase files use data objects (no hardcoded strings in display logic)
+- All phase files use DOM-only rendering (no canvas for text)
+- Audio is queued via udioManager.playWhenReady() — never plays before user gesture
+- Shader warmup uses offscreen 1x1 canvas — does not block main thread
+- Verification: 
+px tsc --noEmit zero errors, 
+pm run build exit 0
+

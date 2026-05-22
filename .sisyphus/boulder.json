@@ -29,6 +29,15 @@
       "agent": "Sisyphus-Junior",
       "category": "visual-engineering",
       "updated_at": "2026-05-22T20:37:57.753Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Terminal Engine Core (DOM-based)",
+      "session_id": "ses_1ae95a41cffe6qz8S3yIarZsvC",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-22T20:59:29.877Z"
     }
   }
 }

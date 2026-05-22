@@ -226,4 +226,7 @@
   }
 
   .output-ascii,
-  .cr
+  .crt-line--ascii {
+    color: var(--crt-green);
+  }
+}
