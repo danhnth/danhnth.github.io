@@ -1,0 +1,11 @@
+dist/ contents:
+  - assets/ (directory)
+  - .nojekyll (0 bytes)
+  - 404.html (329 bytes)
+  - index.html (1008 bytes)
+
+Build output verified:
+  - npm run build: exit 0, built in 105ms
+  - dist/index.html exists
+  - dist/404.html exists
+  - dist/.nojekyll exists

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <script>
+      const fragment = window.location.hash;
+      if (fragment) {
+        window.location.href = '/' + fragment;
+      } else {
+        window.location.href = '/';
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
