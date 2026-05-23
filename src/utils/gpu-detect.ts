@@ -176,6 +176,11 @@ export function getCRTConfig(tier: GPUTier): CRTConfig {
       rgbShift: 0.003,
       brightness: 1.1,
       jitterIntensity: 0.002,
+      phosphorMaskIntensity: 0.8,
+      colorBleedIntensity: 0.4,
+      reflectionIntensity: 0.15,
+      cornerPinch: 0.03,
+      moiréScale: 1.0,
     },
     low: {
       tier: 'low',
@@ -190,6 +195,11 @@ export function getCRTConfig(tier: GPUTier): CRTConfig {
       rgbShift: 0.0,
       brightness: 1.05,
       jitterIntensity: 0.0,
+      phosphorMaskIntensity: 0.3,
+      colorBleedIntensity: 0.1,
+      reflectionIntensity: 0.0,
+      cornerPinch: 0.01,
+      moiréScale: 0.5,
     },
     minimal: {
       tier: 'minimal',
@@ -204,6 +214,11 @@ export function getCRTConfig(tier: GPUTier): CRTConfig {
       rgbShift: 0.0,
       brightness: 1.0,
       jitterIntensity: 0.0,
+      phosphorMaskIntensity: 0.0,
+      colorBleedIntensity: 0.0,
+      reflectionIntensity: 0.0,
+      cornerPinch: 0.0,
+      moiréScale: 0.0,
     },
   };
 

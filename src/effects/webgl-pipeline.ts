@@ -15,6 +15,11 @@ interface PipelineConfig {
   rgbShift: number;
   brightness: number;
   jitterIntensity: number;
+  phosphorMaskIntensity: number;
+  colorBleedIntensity: number;
+  reflectionIntensity: number;
+  cornerPinch: number;
+  moiréScale: number;
 }
 
 /**
@@ -54,6 +59,11 @@ export class WebGLPipeline {
   private uRgbShift: WebGLUniformLocation | null = null;
   private uBrightness: WebGLUniformLocation | null = null;
   private uJitterIntensity: WebGLUniformLocation | null = null;
+  private uPhosphorMaskIntensity: WebGLUniformLocation | null = null;
+  private uColorBleedIntensity: WebGLUniformLocation | null = null;
+  private uReflectionIntensity: WebGLUniformLocation | null = null;
+  private uCornerPinch: WebGLUniformLocation | null = null;
+  private uMoiréScale: WebGLUniformLocation | null = null;
 
   constructor(config: PipelineConfig) {
     this.config = config;
@@ -152,6 +162,11 @@ export class WebGLPipeline {
     this.uRgbShift = gl.getUniformLocation(program, 'u_rgbShift');
     this.uBrightness = gl.getUniformLocation(program, 'u_brightness');
     this.uJitterIntensity = gl.getUniformLocation(program, 'u_jitterIntensity');
+    this.uPhosphorMaskIntensity = gl.getUniformLocation(program, 'u_phosphorMaskIntensity');
+    this.uColorBleedIntensity = gl.getUniformLocation(program, 'u_colorBleedIntensity');
+    this.uReflectionIntensity = gl.getUniformLocation(program, 'u_reflectionIntensity');
+    this.uCornerPinch = gl.getUniformLocation(program, 'u_cornerPinch');
+    this.uMoiréScale = gl.getUniformLocation(program, 'u_moiréScale');
 
     // Create fullscreen quad (two triangles)
     const positions = new Float32Array([
@@ -316,6 +331,11 @@ export class WebGLPipeline {
     gl.uniform1f(this.uRgbShift, this.config.rgbShift);
     gl.uniform1f(this.uBrightness, this.config.brightness);
     gl.uniform1f(this.uJitterIntensity, this.config.jitterIntensity);
+    gl.uniform1f(this.uPhosphorMaskIntensity, this.config.phosphorMaskIntensity);
+    gl.uniform1f(this.uColorBleedIntensity, this.config.colorBleedIntensity);
+    gl.uniform1f(this.uReflectionIntensity, this.config.reflectionIntensity);
+    gl.uniform1f(this.uCornerPinch, this.config.cornerPinch);
+    gl.uniform1f(this.uMoiréScale, this.config.moiréScale);
 
     // Draw fullscreen quad
     gl.drawArrays(gl.TRIANGLES, 0, 6);

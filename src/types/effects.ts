@@ -13,6 +13,11 @@ export interface CRTConfig {
   rgbShift: number;
   brightness: number;
   jitterIntensity: number;
+  phosphorMaskIntensity: number;
+  colorBleedIntensity: number;
+  reflectionIntensity: number;
+  cornerPinch: number;
+  moiréScale: number;
 }
 
 export interface ShaderProgram {
