@@ -81,6 +81,7 @@ async function main(): Promise<void> {
 
   // 7. Initialize CRT effects
   const crtManager = new CRTEffectsManager(gpuTier, crtConfig);
+  crtManager.setTerminalElement(terminal.getElement());
   crtManager.initialize();
 
   // 8. Initialize touch keyboard (mobile)

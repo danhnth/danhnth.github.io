@@ -22,20 +22,57 @@
   --crt-selection-bg: #33FF66;
   --crt-selection-text: #0a0a0a;
 
-  /* ── Phosphor Glow ─────────────────────────────────────── */
+  /* ── Phosphor Glow / Bloom ─────────────────────────────── */
   --crt-glow-spread: 2px;
   --crt-glow-color: rgba(51, 255, 102, 0.6);
   --crt-glow-color-dim: rgba(51, 255, 102, 0.3);
+  --crt-bloom-spread-1: 1px;
+  --crt-bloom-spread-2: 3px;
+  --crt-bloom-spread-3: 8px;
+  --crt-bloom-spread-4: 16px;
+
+  /* ── RGB Shift (Chromatic Aberration) ────────────────────── */
+  --crt-rgb-offset: 1.5px;
+  --crt-rgb-red: rgba(255, 0, 0, 0.4);
+  --crt-rgb-blue: rgba(0, 80, 255, 0.4);
 
   /* ── Scanline ──────────────────────────────────────────── */
   --crt-scanline-opacity: 0.15;
   --crt-scanline-gap: 2px;
+  --crt-scanline-dark: 0.18;
+  --crt-scanline-light: 0.02;
 
   /* ── Flicker ───────────────────────────────────────────── */
   --crt-flicker-intensity: 0.03;
+  --crt-flicker-speed: 0.1s;
 
-  /* ── Barrel Distortion ─────────────────────────────────── */
+  /* ── Barrel Distortion / Curvature ─────────────────────── */
   --crt-curvature: 0.02;
+  --crt-overscan: -3px;
+
+  /* ── Screen Brightness ─────────────────────────────────── */
+  --crt-brightness: 1.15;
+
+  /* ── Jitter ──────────────────────────────────────────────── */
+  --crt-jitter-x: 0.3px;
+  --crt-jitter-y: 0.15px;
+  --crt-jitter-speed: 0.08s;
+
+  /* ── Burn-in / Ghosting ────────────────────────────────── */
+  --crt-ghost-opacity: 0.04;
+  --crt-ghost-blur: 2px;
+
+  /* ── Static Noise ──────────────────────────────────────── */
+  --crt-noise-opacity: 0.03;
+
+  /* ── Scanning Beam ─────────────────────────────────────── */
+  --crt-beam-height: 120px;
+  --crt-beam-blur: 8px;
+  --crt-beam-speed: 8s;
+  --crt-beam-opacity: 0.5;
+
+  /* ── Horizontal Sync ───────────────────────────────────── */
+  --crt-hsync-intensity: 0.02;
 
   /* ── Typography ────────────────────────────────────────── */
   --crt-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -97,7 +134,12 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --crt-flicker-intensity: 0;
+    --crt-flicker-speed: 0s;
     --crt-glow-spread: 0;
+    --crt-jitter-x: 0;
+    --crt-jitter-y: 0;
+    --crt-jitter-speed: 0s;
+    --crt-beam-opacity: 0;
   }
 }
 
@@ -109,5 +151,13 @@
     --crt-green-dim: #22aa44;
     --crt-dim: #22aa44;
     --crt-ascii: #22aa44;
+    --crt-bloom-spread-1: 0;
+    --crt-bloom-spread-2: 0;
+    --crt-bloom-spread-3: 0;
+    --crt-bloom-spread-4: 0;
+    --crt-rgb-offset: 0;
+    --crt-ghost-opacity: 0;
+    --crt-noise-opacity: 0;
+    --crt-beam-opacity: 0;
   }
 }

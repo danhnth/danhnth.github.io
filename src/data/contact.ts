@@ -8,9 +8,9 @@ export interface Contact {
 }
 
 export const contact: Contact = {
-  email: 'tdanh2005@gmail.com',
-  linkedin: 'linkedin.com/in/danhnt24',
-  github: 'github.com/danhnth',
+  email: 'mailto:tdanh2005@gmail.com',
+  linkedin: 'https://linkedin.com/in/danhnt24',
+  github: 'https://github.com/danhnth',
   emailDisplay: 'tdanh2005@gmail.com',
   linkedinDisplay: 'linkedin.com/in/danhnt24',
   githubDisplay: 'github.com/danhnth',

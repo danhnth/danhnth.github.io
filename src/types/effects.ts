@@ -6,6 +6,13 @@ export interface CRTConfig {
   bloomStrength: number;
   curvatureAmount: number;
   flickerRate: number;
+  noiseIntensity: number;
+  beamIntensity: number;
+  vignetteStrength: number;
+  hSyncIntensity: number;
+  rgbShift: number;
+  brightness: number;
+  jitterIntensity: number;
 }
 
 export interface ShaderProgram {

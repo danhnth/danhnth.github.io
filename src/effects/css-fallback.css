@@ -7,8 +7,14 @@
 /* ── Terminal Container with CSS Effects ─────────────────── */
 .crt-effects--css {
   position: relative;
+  border-radius: 2%;
+  box-shadow:
+    inset 0 0 80px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
+/* Scanlines pseudo-element */
 .crt-effects--css::before {
   content: '';
   position: absolute;
@@ -25,6 +31,7 @@
   background-size: 100% calc(var(--crt-scanline-gap, 2px) * 2);
 }
 
+/* Vignette pseudo-element */
 .crt-effects--css::after {
   content: '';
   position: absolute;
@@ -38,12 +45,54 @@
   );
 }
 
-/* ── Curvature Illusion ──────────────────────────────────── */
-.crt-effects--css {
-  border-radius: 2%;
-  box-shadow:
-    inset 0 0 80px rgba(0, 0, 0, 0.5),
-    inset 0 0 20px rgba(0, 0, 0, 0.3);
+/* ── Scanning Beam (Glowing Line) ─────────────────────────── */
+.crt-effects--css .crt-scanning-beam {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--crt-beam-height, 120px);
+  pointer-events: none;
+  z-index: calc(var(--crt-z-scanlines, 20) + 1);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(51, 255, 102, 0.03) 30%,
+    rgba(51, 255, 102, 0.12) 50%,
+    rgba(51, 255, 102, 0.03) 70%,
+    transparent 100%
+  );
+  filter: blur(var(--crt-beam-blur, 8px));
+  opacity: var(--crt-beam-opacity, 0.5);
+  animation: crt-beam-drop var(--crt-beam-speed, 8s) cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+@keyframes crt-beam-drop {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--crt-beam-opacity, 0.5);
+  }
+  90% {
+    opacity: var(--crt-beam-opacity, 0.5);
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+/* ── Static Noise Overlay ────────────────────────────────── */
+.crt-effects--css .crt-noise-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: calc(var(--crt-z-scanlines, 20) + 2);
+  opacity: var(--crt-noise-opacity, 0.03);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
 }
 
 /* ── Flicker Animation ───────────────────────────────────── */
@@ -54,7 +103,25 @@
 }
 
 .crt-effects--css--flicker {
-  animation: crt-flicker 0.1s infinite;
+  animation: crt-flicker var(--crt-flicker-speed, 0.1s) infinite;
+}
+
+/* ── Jitter Animation ────────────────────────────────────── */
+@keyframes crt-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(var(--crt-jitter-x), var(--crt-jitter-y)); }
+  20% { transform: translate(calc(var(--crt-jitter-x) * -0.5), calc(var(--crt-jitter-y) * -0.3)); }
+  30% { transform: translate(calc(var(--crt-jitter-x) * 0.3), calc(var(--crt-jitter-y) * 0.5)); }
+  40% { transform: translate(0, 0); }
+  50% { transform: translate(calc(var(--crt-jitter-x) * -0.8), 0); }
+  60% { transform: translate(0, calc(var(--crt-jitter-y) * -0.6)); }
+  70% { transform: translate(var(--crt-jitter-x), 0); }
+  80% { transform: translate(0, var(--crt-jitter-y)); }
+  90% { transform: translate(calc(var(--crt-jitter-x) * 0.2), calc(var(--crt-jitter-y) * -0.4)); }
+}
+
+.crt-effects--css--jitter {
+  animation: crt-jitter var(--crt-jitter-speed, 0.08s) step-end infinite;
 }
 
 /* ── Low Tier: Reduced Effects ───────────────────────────── */
@@ -70,6 +137,14 @@
   animation: none;
 }
 
+.crt-effects--css--low .crt-scanning-beam {
+  display: none;
+}
+
+.crt-effects--css--low .crt-noise-overlay {
+  display: none;
+}
+
 /* ── Minimal Tier: Bare Minimum ──────────────────────────── */
 .crt-effects--css--minimal::before,
 .crt-effects--css--minimal::after {
@@ -81,18 +156,30 @@
   border-radius: 0;
 }
 
-.crt-effects--css--minimal.crt-effects--css--flicker {
+.crt-effects--css--minimal.crt-effects--css--flicker,
+.crt-effects--css--minimal.crt-effects--css--jitter {
   animation: none;
+}
+
+.crt-effects--css--minimal .crt-scanning-beam,
+.crt-effects--css--minimal .crt-noise-overlay {
+  display: none;
 }
 
 /* ── Accessibility: Reduced Motion ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .crt-effects--css--flicker {
+  .crt-effects--css--flicker,
+  .crt-effects--css--jitter {
     animation: none !important;
+  }
+
+  .crt-scanning-beam {
+    animation: none !important;
+    opacity: 0 !important;
   }
 }
 
-/* ── Accessibility: High Contrast ──────────────────────────── */
+/* ── Accessibility: High Contrast ─────────────────────────── */
 @media (prefers-contrast: high) {
   .crt-effects--css::before {
     opacity: 0.05;
@@ -100,5 +187,13 @@
 
   .crt-effects--css::after {
     opacity: 0.2;
+  }
+
+  .crt-scanning-beam {
+    display: none;
+  }
+
+  .crt-noise-overlay {
+    display: none;
   }
 }

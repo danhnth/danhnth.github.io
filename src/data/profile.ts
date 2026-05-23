@@ -7,8 +7,11 @@ export interface Profile {
   major: string;
   bio: string;
   email: string;
+  emailDisplay: string;
   linkedin: string;
+  linkedinDisplay: string;
   github: string;
+  githubDisplay: string;
   resumeUrl: string;
 }
 
@@ -20,9 +23,12 @@ export const profile: Profile = {
   year: '3rd year',
   major: 'Computer Science, Cybersecurity specialization',
   bio: "I'm a 3rd-year Computer Science student at Ho Chi Minh City University of Technology (HCMUT), specializing in Cybersecurity. I build intelligent security systems — from deep-learning-powered Intrusion Detection Systems to full-scale SOC architectures.",
-  email: 'tdanh2005@gmail.com',
-  linkedin: 'linkedin.com/in/danhnt24',
-  github: 'github.com/danhnth',
+  email: 'mailto:tdanh2005@gmail.com',
+  emailDisplay: 'tdanh2005@gmail.com',
+  linkedin: 'https://linkedin.com/in/danhnt24',
+  linkedinDisplay: 'linkedin.com/in/danhnt24',
+  github: 'https://github.com/danhnth',
+  githubDisplay: 'github.com/danhnth',
   resumeUrl: '/assets/Nguyen_Thanh_Danh_CV.pdf',
 };
 

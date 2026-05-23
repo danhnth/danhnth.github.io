@@ -1,6 +1,6 @@
 import {
   vertexShaderSource,
-  fragmentShaderComposite,
+  fragmentShaderOverlay,
 } from './shader-source.ts';
 
 interface PipelineConfig {
@@ -8,12 +8,24 @@ interface PipelineConfig {
   bloomStrength: number;
   curvatureAmount: number;
   flickerRate: number;
+  noiseIntensity: number;
+  beamIntensity: number;
+  vignetteStrength: number;
+  hSyncIntensity: number;
+  rgbShift: number;
+  brightness: number;
+  jitterIntensity: number;
 }
 
 /**
- * WebGL pipeline for rendering CRT effects via an overlay canvas.
+ * WebGL pipeline for rendering CRT screen-surface effects via an overlay canvas.
  * Creates its own offscreen canvas, compiles shaders, and renders a fullscreen quad.
  * Uses mediump precision for mobile compatibility.
+ *
+ * This overlay renders scanlines, noise, scanning beam, vignette, horizontal sync,
+ * RGB shift, curvature, jitter, flicker, and bloom as a transparent layer over
+ * the terminal content. Content-level effects (phosphor glow, text bloom) are
+ * handled via CSS for better text rendering quality.
  */
 export class WebGLPipeline {
   private canvas: HTMLCanvasElement | null = null;
@@ -35,6 +47,13 @@ export class WebGLPipeline {
   private uBloomStrength: WebGLUniformLocation | null = null;
   private uCurvatureAmount: WebGLUniformLocation | null = null;
   private uFlickerRate: WebGLUniformLocation | null = null;
+  private uNoiseIntensity: WebGLUniformLocation | null = null;
+  private uBeamIntensity: WebGLUniformLocation | null = null;
+  private uVignetteStrength: WebGLUniformLocation | null = null;
+  private uHSyncIntensity: WebGLUniformLocation | null = null;
+  private uRgbShift: WebGLUniformLocation | null = null;
+  private uBrightness: WebGLUniformLocation | null = null;
+  private uJitterIntensity: WebGLUniformLocation | null = null;
 
   constructor(config: PipelineConfig) {
     this.config = config;
@@ -111,7 +130,7 @@ export class WebGLPipeline {
     const gl = this.gl;
     if (!gl) return false;
 
-    const program = this.createProgram(gl, vertexShaderSource, fragmentShaderComposite);
+    const program = this.createProgram(gl, vertexShaderSource, fragmentShaderOverlay);
     if (!program) {
       return false;
     }
@@ -126,6 +145,13 @@ export class WebGLPipeline {
     this.uBloomStrength = gl.getUniformLocation(program, 'u_bloomStrength');
     this.uCurvatureAmount = gl.getUniformLocation(program, 'u_curvatureAmount');
     this.uFlickerRate = gl.getUniformLocation(program, 'u_flickerRate');
+    this.uNoiseIntensity = gl.getUniformLocation(program, 'u_noiseIntensity');
+    this.uBeamIntensity = gl.getUniformLocation(program, 'u_beamIntensity');
+    this.uVignetteStrength = gl.getUniformLocation(program, 'u_vignetteStrength');
+    this.uHSyncIntensity = gl.getUniformLocation(program, 'u_hSyncIntensity');
+    this.uRgbShift = gl.getUniformLocation(program, 'u_rgbShift');
+    this.uBrightness = gl.getUniformLocation(program, 'u_brightness');
+    this.uJitterIntensity = gl.getUniformLocation(program, 'u_jitterIntensity');
 
     // Create fullscreen quad (two triangles)
     const positions = new Float32Array([
@@ -283,6 +309,13 @@ export class WebGLPipeline {
     gl.uniform1f(this.uBloomStrength, this.config.bloomStrength);
     gl.uniform1f(this.uCurvatureAmount, this.config.curvatureAmount);
     gl.uniform1f(this.uFlickerRate, this.config.flickerRate);
+    gl.uniform1f(this.uNoiseIntensity, this.config.noiseIntensity);
+    gl.uniform1f(this.uBeamIntensity, this.config.beamIntensity);
+    gl.uniform1f(this.uVignetteStrength, this.config.vignetteStrength);
+    gl.uniform1f(this.uHSyncIntensity, this.config.hSyncIntensity);
+    gl.uniform1f(this.uRgbShift, this.config.rgbShift);
+    gl.uniform1f(this.uBrightness, this.config.brightness);
+    gl.uniform1f(this.uJitterIntensity, this.config.jitterIntensity);
 
     // Draw fullscreen quad
     gl.drawArrays(gl.TRIANGLES, 0, 6);

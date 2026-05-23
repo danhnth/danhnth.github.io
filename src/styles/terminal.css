@@ -15,6 +15,29 @@
   line-height: var(--crt-terminal-line-height);
   color: var(--crt-green);
   z-index: var(--crt-z-terminal);
+
+  /* ── CRT Content Effects ───────────────────────────────── */
+  /* Brightness boost */
+  filter: brightness(var(--crt-brightness, 1.15));
+
+  /* Multi-layer phosphor bloom / glow on text */
+  text-shadow:
+    0 0 var(--crt-bloom-spread-1) var(--crt-glow-color),
+    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color-dim),
+    0 0 var(--crt-bloom-spread-3) rgba(51, 255, 102, 0.15),
+    0 0 var(--crt-bloom-spread-4) rgba(51, 255, 102, 0.05);
+
+  /* RGB chromatic aberration shift */
+  --crt-rgb-red-glow: 0 calc(var(--crt-rgb-offset) * 0.5) var(--crt-bloom-spread-2) var(--crt-rgb-red);
+  --crt-rgb-blue-glow: 0 calc(var(--crt-rgb-offset) * -0.5) var(--crt-bloom-spread-2) var(--crt-rgb-blue);
+
+  /* Subtle screen curvature via border-radius */
+  border-radius: 2%;
+
+  /* Edge darkening from curved glass */
+  box-shadow:
+    inset 0 0 100px rgba(0, 0, 0, 0.6),
+    inset 0 0 30px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Terminal Output Area ────────────────────────────────── */
@@ -196,6 +219,70 @@
   scrollbar-color: var(--crt-green-dim) var(--crt-bg-dark);
 }
 
+/* ── CRT Content-Level Effects ───────────────────────────── */
+
+/* Phosphor glow enhancement on interactive elements */
+.crt-terminal__prompt,
+.crt-terminal__cursor {
+  text-shadow:
+    0 0 var(--crt-bloom-spread-1) var(--crt-glow-color),
+    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color),
+    0 0 var(--crt-bloom-spread-3) rgba(51, 255, 102, 0.3);
+}
+
+/* RGB shift on headings for chromatic aberration feel */
+.output-heading,
+.crt-line--heading {
+  text-shadow:
+    calc(var(--crt-rgb-offset) * 0.5) 0 var(--crt-bloom-spread-1) rgba(255, 0, 0, 0.3),
+    calc(var(--crt-rgb-offset) * -0.5) 0 var(--crt-bloom-spread-1) rgba(0, 80, 255, 0.3),
+    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color-dim);
+}
+
+/* Burn-in / ghosting effect on static elements (prompt) */
+.crt-terminal__prompt {
+  position: relative;
+}
+
+.crt-terminal__prompt::after {
+  content: attr(data-prompt);
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: transparent;
+  text-shadow:
+    0 0 var(--crt-ghost-blur) rgba(51, 255, 102, var(--crt-ghost-opacity));
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Chroma color / phosphor tinting overlay */
+.crt-terminal__output {
+  position: relative;
+}
+
+.crt-terminal__output::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 80, 20, 0.02) 0%,
+    rgba(20, 120, 40, 0.04) 50%,
+    rgba(10, 80, 20, 0.02) 100%
+  );
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+/* Low-res feel: slightly pixelated rendering on text */
+.crt-terminal {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: pixelated;
+}
+
 /* ── Accessibility: Reduced Motion ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .crt-terminal__cursor {
@@ -228,5 +315,11 @@
   .output-ascii,
   .crt-line--ascii {
     color: var(--crt-green);
+  }
+
+  .crt-terminal {
+    filter: brightness(1.0);
+    text-shadow: none;
+    box-shadow: none;
   }
 }

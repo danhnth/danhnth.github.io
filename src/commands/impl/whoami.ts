@@ -2,7 +2,7 @@ import type { Command, CommandResult, CommandContext } from '../../types/command
 import type { OutputLine } from '../../types/terminal';
 import { profile } from '../../data/profile';
 
-const BOX_WIDTH = 50;
+const BOX_WIDTH = 52;
 const INNER_WIDTH = BOX_WIDTH - 4;
 
 function padCenter(text: string, width: number): string {
@@ -17,17 +17,23 @@ function padRight(text: string, width: number): string {
   return text + ' '.repeat(padding);
 }
 
+function truncate(text: string, width: number): string {
+  if (text.length <= width) return text;
+  return text.slice(0, width - 3) + '...';
+}
+
 function buildAsciiBox(lines: string[]): OutputLine[] {
   const result: OutputLine[] = [];
 
-  const top = `┌${'─'.repeat(INNER_WIDTH)}┐`;
-  const bottom = `└${'─'.repeat(INNER_WIDTH)}┘`;
+  const top = `+${'-'.repeat(INNER_WIDTH)}+`;
+  const bottom = `+${'-'.repeat(INNER_WIDTH)}+`;
 
   result.push({ text: top, type: 'ascii' });
 
   for (const line of lines) {
-    const content = padRight(line, INNER_WIDTH);
-    result.push({ text: `│ ${content} │`, type: 'ascii' });
+    const safeLine = truncate(line, INNER_WIDTH);
+    const content = padRight(safeLine, INNER_WIDTH);
+    result.push({ text: `| ${content} |`, type: 'ascii' });
   }
 
   result.push({ text: bottom, type: 'ascii' });
@@ -54,9 +60,9 @@ export const whoamiCommand: Command = {
       padCenter(`${profile.university} | ${profile.year}`, INNER_WIDTH),
       padCenter(profile.major, INNER_WIDTH),
       '',
-      `Email: ${profile.email}`,
-      `LinkedIn: ${profile.linkedin}`,
-      `GitHub: ${profile.github}`,
+      `Email: ${profile.emailDisplay}`,
+      `LinkedIn: ${profile.linkedinDisplay}`,
+      `GitHub: ${profile.githubDisplay}`,
     ];
 
     lines.push(...buildAsciiBox(boxLines));

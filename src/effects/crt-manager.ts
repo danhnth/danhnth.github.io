@@ -4,7 +4,7 @@ import { EffectsBridge } from './effects-bridge.ts';
 /**
  * CRTEffectsManager initializes and controls CRT effects based on GPU tier.
  * - High tier: WebGL shader pipeline with full effects
- * - Low tier: CSS scanlines + vignette
+ * - Low tier: CSS scanlines + vignette + beam + noise
  * - Minimal tier: CSS only
  *
  * Respects prefers-reduced-motion: reduce (disable all animations)
@@ -27,6 +27,13 @@ export class CRTEffectsManager {
 
     // Listen for accessibility preference changes
     this.setupMediaQueryListeners();
+  }
+
+  /**
+   * Set the terminal element to apply effects to.
+   */
+  setTerminalElement(element: HTMLElement): void {
+    this.terminalElement = element;
   }
 
   /**
@@ -82,7 +89,7 @@ export class CRTEffectsManager {
   }
 
   /**
-   * Apply CSS fallback classes to terminal element.
+   * Apply CSS fallback classes and overlay elements to terminal.
    */
   private applyCSSFallback(): void {
     if (!this.terminalElement) return;
@@ -99,6 +106,58 @@ export class CRTEffectsManager {
     if (!this.reducedMotion && this.tier !== 'minimal') {
       this.terminalElement.classList.add('crt-effects--css--flicker');
     }
+
+    // Add jitter if not reduced motion
+    if (!this.reducedMotion && this.tier === 'high') {
+      this.terminalElement.classList.add('crt-effects--css--jitter');
+    }
+
+    // Add scanning beam element
+    if (!this.reducedMotion && this.tier !== 'minimal') {
+      this.addScanningBeam();
+    }
+
+    // Add noise overlay element
+    if (this.tier !== 'minimal') {
+      this.addNoiseOverlay();
+    }
+  }
+
+  /**
+   * Add scanning beam element to terminal.
+   */
+  private addScanningBeam(): void {
+    if (!this.terminalElement) return;
+    if (this.terminalElement.querySelector('.crt-scanning-beam')) return;
+
+    const beam = document.createElement('div');
+    beam.className = 'crt-scanning-beam';
+    this.terminalElement.appendChild(beam);
+  }
+
+  /**
+   * Add noise overlay element to terminal.
+   */
+  private addNoiseOverlay(): void {
+    if (!this.terminalElement) return;
+    if (this.terminalElement.querySelector('.crt-noise-overlay')) return;
+
+    const noise = document.createElement('div');
+    noise.className = 'crt-noise-overlay';
+    this.terminalElement.appendChild(noise);
+  }
+
+  /**
+   * Remove CSS fallback overlay elements.
+   */
+  private removeCSSFallbackElements(): void {
+    if (!this.terminalElement) return;
+
+    const beam = this.terminalElement.querySelector('.crt-scanning-beam');
+    if (beam) beam.remove();
+
+    const noise = this.terminalElement.querySelector('.crt-noise-overlay');
+    if (noise) noise.remove();
   }
 
   /**
@@ -111,8 +170,11 @@ export class CRTEffectsManager {
       'crt-effects--css',
       'crt-effects--css--low',
       'crt-effects--css--minimal',
-      'crt-effects--css--flicker'
+      'crt-effects--css--flicker',
+      'crt-effects--css--jitter'
     );
+
+    this.removeCSSFallbackElements();
   }
 
   /**

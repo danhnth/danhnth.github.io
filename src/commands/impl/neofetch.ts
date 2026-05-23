@@ -1,10 +1,14 @@
 import type { Command, CommandResult, CommandContext } from '../../types/commands';
-import { detectGPUTier } from '../../utils/gpu-detect';
+import { getBootTime } from '../../utils/boot-time';
+import { profile } from '../../data/profile';
+import { skills } from '../../data/skills';
+import { projects } from '../../data/projects';
+import { certs } from '../../data/certs';
 
 interface NeofetchOptions {
   user: string;
   host: string;
-  bootTime: number; // timestamp when boot completed
+  bootTime: number;
   termName: string;
   shellName: string;
 }
@@ -14,18 +18,19 @@ interface NeofetchOptions {
  */
 function formatUptime(bootTime: number): string {
   const now = Date.now();
-  const diffMs = now - bootTime;
+  const diffMs = Math.max(0, now - bootTime);
 
-  // Calculate time components
   const totalSeconds = Math.floor(diffMs / 1000);
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
   const parts: string[] = [];
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
-  parts.push(`${minutes}m`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (parts.length === 0) parts.push(`${seconds}s`);
 
   return parts.join(' ');
 }
@@ -39,42 +44,22 @@ function getResolution(): string {
 }
 
 /**
- * Gets GPU tier display string.
+ * Counts total skills across all categories.
  */
-function getGPUDisplay(): string {
-  const tier = detectGPUTier();
-  const gpuLabels: Record<string, string> = {
-    high: 'Virtual (High)',
-    low: 'Virtual (Low)',
-    minimal: 'Virtual (Minimal)',
-  };
-  return gpuLabels[tier] ?? 'Virtual';
+function getSkillsCount(): number {
+  return Object.values(skills).reduce((sum, arr) => sum + arr.length, 0);
 }
 
 /**
- * Builds the ASCII art logo for DANH.
+ * Builds the ASCII art logo.
  */
 function buildAsciiLogo(): string[] {
   return [
-    '  ██████╗ ',
-    ' ██╔═══██╗',
-    ' ██║   ██║',
-    ' ██║   ██║',
-    ' ╚██████╔╝',
-    '  ╚═════╝ ',
-    '',
-    ' █████╗ ██████╗ ███████╗███╗   ██╗',
-    '██╔══██╗██╔══██╗██╔════╝████╗  ██║',
-    '███████║██████╔╝█████╗  ██╔██╗ ██║',
-    '██╔══██║██╔══██╗██╔══╝  ██║╚██╗██║',
-    '██║  ██║██║  ██║███████╗██║ ╚████║',
-    '╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝',
-    '██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗███████╗██████╗ ███╗   ███╗',
-    '██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔════╝██╔══██╗████╗ ████║',
-    '██████╔╝███████║███████║██╔██╗ ██║   ██║   █████╗  ██████╔╝██╔████╔██║',
-    '██╔══██╗██╔══██║██╔══██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║',
-    '██║  ██║██║  ██║██║  ██║██║ ╚████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║',
-    '╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝',
+    '    ___  ____  _  _  _   _ ',
+    '   / _ \\/ __ \\| || || | | |',
+    '  | (_) | |__| || || || |_| |',
+    '   \\___/|  ___/|_||_|| \\___/ ',
+    '        |_|            |_|   ',
   ];
 }
 
@@ -83,14 +68,17 @@ function buildAsciiLogo(): string[] {
  */
 function buildInfoLines(opts: NeofetchOptions): Array<{ label: string; value: string }> {
   return [
-    { label: 'Terminal', value: opts.termName },
+    { label: 'User', value: opts.user },
     { label: 'Host', value: opts.host },
     { label: 'Uptime', value: formatUptime(opts.bootTime) },
     { label: 'Shell', value: opts.shellName },
     { label: 'Resolution', value: getResolution() },
     { label: 'Theme', value: 'Green Phosphor' },
-    { label: 'CPU', value: 'virtual' },
-    { label: 'Memory', value: getGPUDisplay() },
+    { label: 'Education', value: `${profile.university} (${profile.year})` },
+    { label: 'Major', value: profile.major },
+    { label: 'Skills', value: `${getSkillsCount()} categories` },
+    { label: 'Projects', value: `${projects.length} active` },
+    { label: 'Certs', value: `${certs.length} earned` },
   ];
 }
 
@@ -104,14 +92,13 @@ function formatNeofetchOutput(
   const lines: string[] = [];
   const maxLabelLen = Math.max(...infoLines.map((i) => i.label.length));
 
-  for (let i = 0; i < logoLines.length; i++) {
+  for (let i = 0; i < Math.max(logoLines.length, infoLines.length); i++) {
+    const logoPart = logoLines[i] ?? '';
     if (i < infoLines.length) {
       const paddedLabel = infoLines[i].label.padEnd(maxLabelLen);
-      lines.push(`${logoLines[i]}  ${paddedLabel}  ${infoLines[i].value}`);
-    } else if (i === infoLines.length) {
-      lines.push(`${logoLines[i]}`);
+      lines.push(`${logoPart}  ${paddedLabel}: ${infoLines[i].value}`);
     } else {
-      lines.push(logoLines[i]);
+      lines.push(logoPart);
     }
   }
 
@@ -121,10 +108,10 @@ function formatNeofetchOutput(
 export const neofetchCommand: Command = {
   id: 'builtin:neofetch',
   name: 'neofetch',
-  description: 'Display system information',
+  description: 'Display portfolio information',
   usage: 'neofetch',
   handler: (_args: string[], _context: CommandContext): CommandResult => {
-    const bootTime = Date.now();
+    const bootTime = getBootTime();
     const user = 'guest';
     const host = 'danhnth';
 
@@ -133,7 +120,7 @@ export const neofetchCommand: Command = {
       user,
       host,
       bootTime,
-      termName: 'danhn-term v1.0',
+      termName: 'danhn-term v2.0',
       shellName: 'danhn-sh',
     });
 

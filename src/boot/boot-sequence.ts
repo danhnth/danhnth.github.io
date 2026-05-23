@@ -19,6 +19,7 @@ import { kernelLoadPhase } from './phases/kernel-load';
 import { initSystemPhase } from './phases/init-system';
 import { loginPhase } from './phases/login';
 import { warmupShaders } from './warmup';
+import { setBootTime } from '../utils/boot-time';
 
 const BOOT_CONFIG: BootConfig = {
   skipOnRevisit: true,
@@ -93,6 +94,7 @@ export class BootSequence {
 
     this.currentPhase = 'shell-ready';
     this.terminal.setState('ready');
+    setBootTime(Date.now());
     this.emit('boot:complete');
     this.running = false;
   }
