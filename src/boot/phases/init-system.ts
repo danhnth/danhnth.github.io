@@ -9,6 +9,7 @@
 
 import type { Terminal } from '../../types/terminal';
 import { sleep } from '../typing';
+import { INIT_STRINGS } from '../../data/boot-strings';
 
 const INIT_DATA = {
   services: [
@@ -28,7 +29,7 @@ const INIT_DATA = {
 export async function initSystemPhase(terminal: Terminal): Promise<void> {
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Starting services...', type: 'heading' as const },
+    { text: INIT_STRINGS.startingServices, type: 'heading' as const },
   ]);
 
   await sleep(500);
@@ -45,7 +46,7 @@ export async function initSystemPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'All services started.', type: 'success' as const },
+    { text: INIT_STRINGS.complete, type: 'success' as const },
   ]);
 
   await sleep(400);

@@ -1,8 +1,6 @@
 import type { Command, CommandResult, CommandContext } from '../../types/commands';
 import type { OutputLine } from '../../types/terminal';
 
-const MAX_NAME_LENGTH = 16;
-
 export const helpCommand: Command = {
   id: 'builtin:help',
   name: 'help',
@@ -48,11 +46,15 @@ export const helpCommand: Command = {
     ];
 
     for (const cmd of allCommands) {
-      const paddedName = cmd.name.padEnd(MAX_NAME_LENGTH);
       lines.push({
-        text: `  ${paddedName}  ${cmd.description}`,
-        type: 'text',
-        className: 'command-list-item',
+        text: cmd.name,
+        type: 'success',
+        className: 'command-name',
+      });
+      lines.push({
+        text: `  ${cmd.description}`,
+        type: 'dim',
+        className: 'command-desc',
       });
     }
 

@@ -1080,7 +1080,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/boot/boot-sequence.ts, src/boot/phases/bios-post.ts, src/boot/phases/hardware-detect.ts, src/boot/phases/kernel-load.ts, src/boot/phases/init-system.ts, src/boot/phases/login.ts, src/boot/warmup.ts
   - Pre-commit: `npm run build`
 
-- [ ] 11. Profile Commands (whoami, about, skills)
+- [x] 11. Profile Commands (whoami, about, skills)
 
   **What to do**:
   - Create `src/commands/impl/whoami.ts` — displays name, title, contact in formatted box (ASCII art styled). Uses data from `src/data/profile.ts`
@@ -1157,7 +1157,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/commands/impl/whoami.ts, src/commands/impl/about.ts, src/commands/impl/skills.ts
   - Pre-commit: `npm run build`
 
-- [ ] 12. Content Commands (projects, cat, certs, contact, resume)
+- [x] 12. Content Commands (projects, cat, certs, contact, resume)
 
   **What to do**:
   - Create `src/commands/impl/projects.ts` — lists projects in a "routed view" (scrollable list inside terminal with selection). Projects show title, period, description, tags, GitHub link. Uses `src/data/projects.ts`. Type "1" or project name to see details.
@@ -1232,7 +1232,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/commands/impl/projects.ts, src/commands/impl/cat.ts, src/commands/impl/certs.ts, src/commands/impl/contact.ts, src/commands/impl/resume.ts
   - Pre-commit: `npm run build`
 
-- [ ] 13. Shell System Commands (help, clear, echo, neofetch)
+- [x] 13. Shell System Commands (help, clear, echo, neofetch)
 
   **What to do**:
   - Create `src/commands/impl/help.ts` — lists all registered commands with descriptions. Format: colored command names (green), descriptions (dim), organized alphabetically. Shows usage examples.
@@ -1303,7 +1303,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/commands/impl/help.ts, src/commands/impl/clear.ts, src/commands/impl/echo.ts, src/commands/impl/neofetch.ts
   - Pre-commit: `npm run build`
 
-- [ ] 14. Login Prompt + Welcome Message
+- [x] 14. Login Prompt + Welcome Message
 
   **What to do**:
   - Enhance `src/boot/phases/login.ts` — already exists from Task 10, this task adds the welcome message that appears AFTER login:
@@ -1372,7 +1372,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/boot/phases/login.ts, src/boot/welcome.ts
   - Pre-commit: `npm run build`
 
-- [ ] 15. Sound Effects Integration
+- [x] 15. Sound Effects Integration
 
   **What to do**:
   - Create sound effect audio files or generate them procedurally:
@@ -1458,7 +1458,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/audio/integration.ts, public/sounds/ (audio files)
   - Pre-commit: `npm run build`
 
-- [ ] 16. Mobile Adaptation + Touch Keyboard
+- [x] 16. Mobile Adaptation + Touch Keyboard
 
   **What to do**:
   - Create `src/terminal/touch-keyboard.ts` — virtual keyboard overlay for mobile:
@@ -1548,7 +1548,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/terminal/touch-keyboard.ts, src/styles/mobile.css
   - Pre-commit: `npm run build`
 
-- [ ] 17. Main Entry Point + System Wiring
+- [x] 17. Main Entry Point + System Wiring
 
   **What to do**:
   - Create `src/main.ts` — the main entry point that orchestrates everything:
@@ -1647,7 +1647,7 @@ Max Concurrent: 6 (Wave 1)
   - Files: src/main.ts
   - Pre-commit: `npm run build`
 
-- [ ] 18. GitHub Pages Deployment + CI/CD
+- [x] 18. GitHub Pages Deployment + CI/CD
 
   **What to do**:
   - Create `.github/workflows/deploy.yml` — GitHub Actions workflow:
@@ -1737,19 +1737,19 @@ Max Concurrent: 6 (Wave 1)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, curl endpoint, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `npx tsc --noEmit` + `npx eslint src/` + `npm run build`. Review all changed files for: `as any`/`@ts-ignore`, empty catches, console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names (data/result/item/temp).
   Output: `Build [PASS/FAIL] | Lint [PASS/FAIL] | Types [N errors] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill)
+- [x] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill)
   Start from clean state. Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration: boot → login → commands → effects → sound. Test edge cases: revisit (boot skip), mobile viewport, GPU tier fallback, prefers-reduced-motion. Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
@@ -1789,12 +1789,12 @@ npm run deploy               # Expected: Deployed to danhnth.github.io
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" present
-- [ ] All "Must NOT Have" absent
-- [ ] Boot sequence plays on first visit, skips on revisit
-- [ ] All 10+ commands produce correct output
-- [ ] CRT effects render on high-GPU, CSS fallback on low-GPU
-- [ ] Sound plays after first interaction, muted before
-- [ ] Mobile layout functional with touch keyboard
-- [ ] Accessibility: prefers-reduced-motion, prefers-contrast, ARIA
-- [ ] GitHub Pages deployment works end-to-end
+- [x] All "Must Have" present
+- [x] All "Must NOT Have" absent
+- [x] Boot sequence plays on first visit, skips on revisit
+- [x] All 10+ commands produce correct output
+- [x] CRT effects render on high-GPU, CSS fallback on low-GPU
+- [x] Sound plays after first interaction, muted before
+- [x] Mobile layout functional with touch keyboard
+- [x] Accessibility: prefers-reduced-motion, prefers-contrast, ARIA
+- [x] GitHub Pages deployment works end-to-end

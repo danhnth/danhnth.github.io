@@ -1,0 +1,254 @@
+/* ============================================================
+   CRT TERMINAL — Mobile Adaptation
+   Touch keyboard, responsive layout, simplified CRT effects
+   ============================================================ */
+
+/* ── Mobile Viewport (< 768px) ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* ── Terminal container fills viewport ─────────────────── */
+  .crt-terminal {
+    height: 100dvh; /* dynamic viewport height for mobile browsers */
+  }
+
+  /* ── Larger font for readability on small screens ──────── */
+  .crt-terminal {
+    --crt-font-size-base: 1.125rem;
+    --crt-font-size-sm: 1rem;
+    --crt-font-size-md: 1.25rem;
+    --crt-font-size-xl: 1.75rem;
+  }
+
+  /* ── Output area adjusts when keyboard is visible ──────── */
+  .crt-terminal--keyboard-visible .crt-terminal__output {
+    height: calc(100dvh - 3rem - 280px); /* subtract input line + keyboard height */
+  }
+
+  .crt-terminal--keyboard-visible .crt-terminal__input-line {
+    position: absolute;
+    bottom: 280px; /* above keyboard */
+    left: 0;
+    right: 0;
+    z-index: var(--crt-z-overlay);
+  }
+
+  /* ── Touch-friendly tap targets ────────────────────────── */
+  .crt-terminal__input {
+    min-height: 44px;
+    font-size: var(--crt-font-size-base);
+  }
+
+  .crt-terminal__input-line {
+    min-height: 44px;
+  }
+
+  /* ── CRT Effects Simplification ────────────────────────── */
+  /* Disable barrel distortion on mobile — interferes with touch accuracy */
+  .crt-terminal {
+    --crt-curvature: 0;
+  }
+
+  /* Reduce scanline sharpness on mobile */
+  .crt-terminal {
+    --crt-scanline-opacity: 0.08;
+    --crt-scanline-gap: 3px;
+  }
+
+  /* Reduce glow spread on mobile for performance */
+  .crt-terminal {
+    --crt-glow-spread: 1px;
+  }
+
+  /* Cap flicker on mobile */
+  .crt-terminal {
+    --crt-flicker-intensity: 0.01;
+  }
+}
+
+/* ── Touch Keyboard Overlay ────────────────────────────────── */
+.touch-keyboard {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background-color: var(--crt-bg-dark);
+  border-top: 2px solid var(--crt-green-dim);
+  padding: var(--crt-space-2);
+  padding-bottom: env(safe-area-inset-bottom, var(--crt-space-2));
+  z-index: var(--crt-z-overlay);
+  transform: translateY(100%);
+  transition: transform var(--crt-transition-base) ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.touch-keyboard--visible {
+  transform: translateY(0);
+}
+
+/* ── Keyboard Rows ─────────────────────────────────────────── */
+.touch-keyboard__row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.touch-keyboard__row:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Individual Keys ───────────────────────────────────────── */
+.touch-keyboard__key {
+  flex: 1;
+  max-width: 44px;
+  min-height: 44px;
+  min-width: 32px;
+  padding: 0;
+  background-color: var(--crt-bg);
+  border: 1px solid var(--crt-green-dim);
+  border-radius: var(--crt-radius-sm);
+  color: var(--crt-green);
+  font-family: var(--crt-font-mono);
+  font-size: var(--crt-font-size-sm);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--crt-transition-fast) ease,
+    border-color var(--crt-transition-fast) ease,
+    color var(--crt-transition-fast) ease;
+}
+
+/* Active/pressed state — brighten on tap */
+.touch-keyboard__key--active,
+.touch-keyboard__key:active {
+  background-color: var(--crt-green-dim);
+  border-color: var(--crt-green);
+  color: var(--crt-green-bright);
+}
+
+/* ── Special Key Variants ──────────────────────────────────── */
+.touch-keyboard__key--wide {
+  max-width: 64px;
+  flex: 1.5;
+}
+
+.touch-keyboard__key--special {
+  max-width: 72px;
+  flex: 1.2;
+  font-size: var(--crt-font-size-xs);
+  letter-spacing: 0.02em;
+}
+
+.touch-keyboard__key--arrow {
+  max-width: 44px;
+}
+
+.touch-keyboard__key--space {
+  max-width: none;
+}
+
+.touch-keyboard__key--enter {
+  max-width: 80px;
+  flex: 1.5;
+  background-color: var(--crt-green-dim);
+  color: var(--crt-bg);
+}
+
+.touch-keyboard__key--enter:active,
+.touch-keyboard__key--enter.touch-keyboard__key--active {
+  background-color: var(--crt-green);
+  color: var(--crt-bg-dark);
+}
+
+.touch-keyboard__key--shift {
+  max-width: 52px;
+  flex: 1.2;
+}
+
+.touch-keyboard__key--shift-active {
+  background-color: var(--crt-green);
+  color: var(--crt-bg-dark);
+  border-color: var(--crt-green-bright);
+}
+
+/* ── Toggle Button ─────────────────────────────────────────── */
+.touch-keyboard__toggle {
+  position: fixed;
+  bottom: var(--crt-space-4);
+  right: var(--crt-space-4);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--crt-bg-dark);
+  border: 2px solid var(--crt-green-dim);
+  border-radius: var(--crt-radius-md);
+  color: var(--crt-green);
+  cursor: pointer;
+  z-index: var(--crt-z-modal);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--crt-transition-fast) ease,
+    border-color var(--crt-transition-fast) ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.touch-keyboard__toggle:active {
+  background-color: var(--crt-green-dim);
+  border-color: var(--crt-green);
+}
+
+.touch-keyboard__toggle svg {
+  pointer-events: none;
+}
+
+/* ── Hide keyboard on desktop ──────────────────────────────── */
+@media (min-width: 769px) {
+  .touch-keyboard {
+    display: none !important;
+  }
+
+  .touch-keyboard__toggle {
+    display: none !important;
+  }
+}
+
+/* ── Accessibility: Reduced Motion ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .touch-keyboard {
+    transition: none;
+  }
+
+  .touch-keyboard__key {
+    transition: none;
+  }
+
+  .touch-keyboard__toggle {
+    transition: none;
+  }
+}
+
+/* ── Very small screens (< 375px) ──────────────────────────── */
+@media (max-width: 374px) {
+  .touch-keyboard__key {
+    min-width: 28px;
+    min-height: 40px;
+    font-size: 0.75rem;
+  }
+
+  .touch-keyboard__key--special {
+    font-size: 0.625rem;
+  }
+
+  .touch-keyboard__row {
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+}

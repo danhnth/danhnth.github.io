@@ -1,0 +1,22 @@
+dist/ contents verification (npm run build passed):
+- index.html (1073 bytes)
+- 404.html (329 bytes)
+- .nojekyll (0 bytes)
+- assets/ (directory)
+  - index-B47RKrBS.css (11420 bytes)
+  - index-DXG2JL0N.js (57969 bytes)
+  - favicon.png (979 bytes)
+  - profile.jpg (74001 bytes)
+  - Nguyen_Thanh_Danh_CV.pdf (48244 bytes)
+  - soc-project.jpg (117786 bytes)
+  - README.md (1191 bytes)
+  - favicon_io/ (directory)
+    - favicon.ico
+    - favicon-32x32.png
+    - favicon-16x16.png
+    - apple-touch-icon.png
+    - android-chrome-512x512.png
+    - android-chrome-192x192.png
+    - site.webmanifest
+
+All required files present. GitHub Pages deployment ready.

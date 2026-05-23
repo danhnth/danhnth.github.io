@@ -9,6 +9,7 @@
 
 import type { Terminal } from '../../types/terminal';
 import { sleep } from '../typing';
+import { HARDWARE_STRINGS } from '../../data/boot-strings';
 
 const HARDWARE_DATA = {
   ideDrives: [
@@ -31,7 +32,7 @@ const HARDWARE_DATA = {
 export async function hardwareDetectPhase(terminal: Terminal): Promise<void> {
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Detecting IDE drives...', type: 'dim' as const },
+    { text: HARDWARE_STRINGS.detectingIde, type: 'dim' as const },
   ]);
 
   await sleep(600);
@@ -48,7 +49,7 @@ export async function hardwareDetectPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Detecting network interfaces...', type: 'dim' as const },
+    { text: HARDWARE_STRINGS.detectingNetwork, type: 'dim' as const },
   ]);
 
   await sleep(600);
@@ -65,7 +66,7 @@ export async function hardwareDetectPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Detecting peripheral devices...', type: 'dim' as const },
+    { text: HARDWARE_STRINGS.detectingPeripheral, type: 'dim' as const },
   ]);
 
   await sleep(400);
@@ -82,7 +83,7 @@ export async function hardwareDetectPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Hardware detection complete.', type: 'success' as const },
+    { text: HARDWARE_STRINGS.complete, type: 'success' as const },
   ]);
 
   await sleep(400);

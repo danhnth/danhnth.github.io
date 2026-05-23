@@ -11,6 +11,8 @@
   },
   "plan_name": "crt-terminal-portfolio",
   "agent": "atlas",
+  "completed_at": "2026-05-23T05:35:00.000Z",
+  "status": "completed",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
@@ -38,6 +40,51 @@
       "agent": "Sisyphus-Junior",
       "category": "deep",
       "updated_at": "2026-05-22T20:59:29.877Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "Profile Commands (whoami, about, skills)",
+      "session_id": "ses_1acd82b58ffeVS3Xm9LNRFa1r8",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-23T04:47:01.427Z"
+    },
+    "todo:15": {
+      "task_key": "todo:15",
+      "task_label": "15",
+      "task_title": "Sound Effects Integration",
+      "session_id": "ses_1acd6f361ffeee9BOHBMNyCPFi",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-23T04:49:16.245Z"
+    },
+    "todo:17": {
+      "task_key": "todo:17",
+      "task_label": "17",
+      "task_title": "Main Entry Point + System Wiring",
+      "session_id": "ses_1acd2691cffeC8iOVB8E1TGCz1",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-23T04:55:06.201Z"
+    },
+    "todo:18": {
+      "task_key": "todo:18",
+      "task_label": "18",
+      "task_title": "GitHub Pages Deployment + CI/CD",
+      "session_id": "ses_1accfb731ffed2PZKVgCTjpRAh",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-23T04:57:09.607Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_1acaebbfcffen2LliATAHDMZmY",
+      "agent": "Sisyphus-Junior",
+      "category": "ultrabrain",
+      "updated_at": "2026-05-23T05:32:21.931Z"
     }
   }
 }

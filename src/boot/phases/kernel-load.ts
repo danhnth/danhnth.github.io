@@ -9,6 +9,7 @@
 
 import type { Terminal } from '../../types/terminal';
 import { sleep } from '../typing';
+import { KERNEL_STRINGS } from '../../data/boot-strings';
 
 const KERNEL_DATA = {
   version: 'Linux version 6.8.0-danhnth-generic',
@@ -40,7 +41,7 @@ const KERNEL_DATA = {
 export async function kernelLoadPhase(terminal: Terminal): Promise<void> {
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Loading kernel...', type: 'heading' as const },
+    { text: KERNEL_STRINGS.loading, type: 'heading' as const },
   ]);
 
   await sleep(800);
@@ -66,7 +67,7 @@ export async function kernelLoadPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Kernel loaded successfully.', type: 'success' as const },
+    { text: KERNEL_STRINGS.loaded, type: 'success' as const },
   ]);
 
   await sleep(400);

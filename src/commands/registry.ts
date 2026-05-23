@@ -6,6 +6,8 @@ import type {
 } from '../types/commands';
 import { helpCommand } from './impl/help';
 import { clearCommand } from './impl/clear';
+import { echoCommand } from './impl/echo';
+import { neofetchCommand } from './impl/neofetch';
 
 export class CommandRegistry implements ICommandRegistry {
   private readonly commands = new Map<string, Command>();
@@ -71,5 +73,7 @@ export class CommandRegistry implements ICommandRegistry {
   private registerBuiltIns(): void {
     this.register(helpCommand);
     this.register(clearCommand);
+    this.register(echoCommand);
+    this.register(neofetchCommand);
   }
 }

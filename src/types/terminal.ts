@@ -19,4 +19,5 @@ export interface Terminal {
   focus(): void;
   setState(state: TerminalState): void;
   getState(): TerminalState;
+  getElement(): HTMLDivElement;
 }

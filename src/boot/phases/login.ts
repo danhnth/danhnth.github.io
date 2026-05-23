@@ -10,6 +10,7 @@
 import type { Terminal } from '../../types/terminal';
 import { profile } from '../../data/profile';
 import { sleep } from '../typing';
+import { LOGIN_STRINGS } from '../../data/boot-strings';
 
 const LOGIN_DATA = {
   username: 'guest',
@@ -28,7 +29,7 @@ export async function loginPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: `${loginName} login: `, type: 'text' as const },
+    { text: `${loginName}${LOGIN_STRINGS.loginPrompt}`, type: 'text' as const },
   ]);
 
   // Auto-type username character by character
@@ -48,7 +49,7 @@ export async function loginPhase(terminal: Terminal): Promise<void> {
 
   // Password prompt
   terminal.writeOutput([
-    { text: 'Password: ', type: 'text' as const },
+    { text: LOGIN_STRINGS.passwordPrompt, type: 'text' as const },
   ]);
 
   // Auto-type password dots
@@ -68,9 +69,9 @@ export async function loginPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'Login successful', type: 'success' as const },
+    { text: LOGIN_STRINGS.loginSuccess, type: 'success' as const },
     {
-      text: `Welcome to DANHNTH Systems, ${profile.name}.`,
+      text: `${LOGIN_STRINGS.welcome}, ${profile.name}.`,
       type: 'text' as const,
     },
     { text: '', type: 'text' as const },

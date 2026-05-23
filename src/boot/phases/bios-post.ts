@@ -21,6 +21,7 @@ import {
 } from '../typing';
 
 import { playBootSequence } from '../../audio/oscillator';
+import { BIOS_STRINGS } from '../../data/boot-strings';
 
 const ASCII_LOGO = [
   '    ____  ___    _   ______  __  _______  ____  _____ ___________',
@@ -30,16 +31,11 @@ const ASCII_LOGO = [
   '/_____/_/  |_/_/ |_/_____/_/  /_/_/    /_____//____/_____//____/',
 ];
 
-const BIOS_INFO = {
-  date: 'BIOS Date: 01/15/26 Ver 1.0.0',
-  cpu: 'Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz',
-};
-
 const MEMORY_CONFIG = {
   start: 0,
   end: 16384,
   step: 128,
-  prefix: 'Memory Test: ',
+  prefix: BIOS_STRINGS.memoryTest,
   suffix: 'K',
   finalSuffix: 'K OK',
 };
@@ -95,19 +91,19 @@ export async function biosPostPhase(terminal: Terminal): Promise<void> {
   await sleep(200);
 
   // CPU detection
-  await typeText(terminal, BIOS_INFO.cpu, 'text', 25);
+  await typeText(terminal, BIOS_STRINGS.cpu, 'text', 25);
   await sleep(200);
 
   // Hardware device list
   const hardwareDevices = [
-    { name: 'Keyboard', status: 'OK' as const },
-    { name: 'Mouse', status: 'OK' as const },
-    { name: 'Primary Master', status: 'OK' as const },
-    { name: 'Primary Slave', status: 'OK' as const },
-    { name: 'Secondary Master', status: 'OK' as const },
-    { name: 'CD-ROM Drive', status: 'OK' as const },
-    { name: 'USB Controller', status: 'OK' as const },
-    { name: 'Network Controller', status: 'OK' as const },
+    { name: BIOS_STRINGS.keyboard, status: 'OK' as const },
+    { name: BIOS_STRINGS.mouse, status: 'OK' as const },
+    { name: BIOS_STRINGS.primaryMaster, status: 'OK' as const },
+    { name: BIOS_STRINGS.primarySlave, status: 'OK' as const },
+    { name: BIOS_STRINGS.secondaryMaster, status: 'OK' as const },
+    { name: BIOS_STRINGS.cdromDrive, status: 'OK' as const },
+    { name: BIOS_STRINGS.usbController, status: 'OK' as const },
+    { name: BIOS_STRINGS.networkController, status: 'OK' as const },
   ];
   await printLines(
     terminal,
@@ -122,7 +118,7 @@ export async function biosPostPhase(terminal: Terminal): Promise<void> {
 
   terminal.writeOutput([
     { text: '', type: 'text' as const },
-    { text: 'BIOS POST complete.', type: 'success' as const },
+    { text: BIOS_STRINGS.postComplete, type: 'success' as const },
   ]);
 
   await sleep(400);
