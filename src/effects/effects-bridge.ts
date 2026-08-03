@@ -42,6 +42,8 @@ export class EffectsBridge {
   private isAttached = false;
   private captureTimerId: number | null = null;
   private mutationObserver: MutationObserver | null = null;
+  private scrollContainer: HTMLElement | null = null;
+  private boundScrollHandler: (() => void) | null = null;
   private contentDirty = true;
   private captureInFlight = false;
   private readonly captureIntervalMs = 80;
@@ -254,9 +256,14 @@ export class EffectsBridge {
       this.mutationObserver.disconnect();
       this.mutationObserver = null;
     }
+    if (this.scrollContainer && this.boundScrollHandler) {
+      this.scrollContainer.removeEventListener('scroll', this.boundScrollHandler);
+    }
+    this.scrollContainer = null;
+    this.boundScrollHandler = null;
   }
 
-  /** Mark the texture stale whenever terminal content changes. */
+  /** Mark the texture stale whenever terminal content changes or scrolls. */
   private observeContent(): void {
     if (!this.terminalElement || this.mutationObserver) return;
 
@@ -269,6 +276,20 @@ export class EffectsBridge {
       subtree: true,
       characterData: true,
     });
+
+    // Changing the scroll position is not a DOM mutation — without this the
+    // overlay would never refresh while the user scrolls the output history.
+    const scroller =
+      this.terminalElement.querySelector<HTMLElement>('.crt-terminal__output');
+    if (scroller) {
+      this.scrollContainer = scroller;
+      this.boundScrollHandler = () => {
+        this.contentDirty = true;
+      };
+      scroller.addEventListener('scroll', this.boundScrollHandler, {
+        passive: true,
+      });
+    }
   }
 
   /** Force a re-capture on the next pump (used after resize). */

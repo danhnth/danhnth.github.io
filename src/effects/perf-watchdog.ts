@@ -9,7 +9,7 @@
  * - Median frame time, not mean: one GC pause must not demote a healthy machine.
  * - 2s sampling window × 2 consecutive bad windows ≈ 4s of genuine slowness.
  * - 1.5s grace period skips shader-compile/first-capture warmup.
- * - Windows containing main-thread blocking work (html-to-image DOM capture)
+ * - Windows containing main-thread blocking work (DOM capture)
  *   are poisoned via markBlockingWork() and never judged.
  * - document.hidden guard: background tabs throttle rAF to ~1Hz, which would
  *   otherwise be a guaranteed false positive.
