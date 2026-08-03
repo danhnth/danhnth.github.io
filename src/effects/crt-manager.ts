@@ -1,60 +1,78 @@
 import type { GPUTier, CRTConfig } from '../types/effects.ts';
 import { EffectsBridge } from './effects-bridge.ts';
+import { PerfWatchdog } from './perf-watchdog.ts';
+import {
+  checkWebGLCapability,
+  applyReducedMotion,
+  getCRTConfig,
+} from '../utils/gpu-detect.ts';
 
 /**
- * CRTEffectsManager initializes and controls CRT effects based on GPU tier.
- * - High tier: WebGL shader pipeline with full effects
- * - Low tier: CSS scanlines + vignette + beam + noise
- * - Minimal tier: CSS only
+ * CRTEffectsManager owns the single authoritative effects decision:
+ * attempt the WebGL pipeline optimistically, demote to the STATIC CSS
+ * fallback only on real, observed failure (capability disqualifier,
+ * pipeline init failure, unrecovered context loss, sustained low FPS).
  *
- * Respects prefers-reduced-motion: reduce (disable all animations)
- * Respects prefers-contrast: more (disable bloom/glow)
+ * prefers-reduced-motion does NOT disable WebGL — static scanlines,
+ * curvature, vignette, mask, and bloom are not motion. It zeroes the
+ * animated shader parameters instead (see applyReducedMotion), which keeps
+ * the accessibility contract intact while preserving the CRT look.
+ *
+ * The demotion target is deliberately the 'minimal' (static) CSS variant:
+ * the animated CSS overlays are measurably MORE expensive on integrated
+ * GPUs than the single WebGL quad, so demoting a struggling machine into
+ * animated CSS would make things worse — and demotion is one-way.
  */
 export class CRTEffectsManager {
   private tier: GPUTier;
   private config: CRTConfig;
   private terminalElement: HTMLElement | null = null;
   private bridge: EffectsBridge | null = null;
+  private watchdog: PerfWatchdog | null = null;
+  private contextLossTimer: number | null = null;
   private isEnabled = false;
   private reducedMotion = false;
   private highContrast = false;
 
   constructor(tier: GPUTier, config: CRTConfig) {
     this.tier = tier;
-    this.config = config;
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.highContrast = window.matchMedia('(prefers-contrast: more)').matches;
+    this.config = this.normalizeConfig(config);
 
-    // Listen for accessibility preference changes
     this.setupMediaQueryListeners();
   }
 
-  /**
-   * Set the terminal element to apply effects to.
-   */
   setTerminalElement(element: HTMLElement): void {
     this.terminalElement = element;
   }
 
-  /**
-   * Setup listeners for accessibility media query changes.
-   */
+  private normalizeConfig(config: CRTConfig): CRTConfig {
+    let next = this.highContrast ? { ...config, bloomStrength: 0 } : config;
+    if (this.reducedMotion) {
+      next = applyReducedMotion(next);
+    }
+    return next;
+  }
+
   private setupMediaQueryListeners(): void {
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const contrastQuery = window.matchMedia('(prefers-contrast: more)');
 
     const handleMotionChange = (e: MediaQueryListEvent | MediaQueryList): void => {
       this.reducedMotion = e.matches;
-      if (this.reducedMotion && this.isEnabled) {
-        this.disable();
+      this.config = this.normalizeConfig(getCRTConfig(this.tier));
+      if (this.bridge) {
+        this.bridge.updateConfig(this.config);
+      } else if (this.terminalElement?.classList.contains('crt-effects--css')) {
+        this.removeCSSFallback();
+        this.applyCSSFallback();
       }
     };
 
     const handleContrastChange = (e: MediaQueryListEvent | MediaQueryList): void => {
       this.highContrast = e.matches;
-      if (this.highContrast) {
-        this.config = { ...this.config, bloomStrength: 0 };
-      }
+      this.config = this.normalizeConfig(getCRTConfig(this.tier));
       if (this.bridge) {
         this.bridge.updateConfig(this.config);
       }
@@ -70,30 +88,71 @@ export class CRTEffectsManager {
     }
   }
 
-  /**
-   * Initialize effects based on GPU tier.
-   * - high: initialize WebGLPipeline + EffectsBridge
-   * - low/minimal: add CSS fallback class to terminal
-   */
   initialize(): void {
     if (!this.terminalElement) return;
 
-    if (this.tier === 'high' && !this.reducedMotion) {
-      // Try WebGL pipeline
-      this.bridge = new EffectsBridge(this.config);
-      this.bridge.attach(this.terminalElement);
-    } else {
-      // Low or minimal tier: CSS fallback
+    const cap = checkWebGLCapability();
+    if (!cap.ok) {
+      this.log(`css-fallback: ${cap.reason}`);
       this.applyCSSFallback();
+      return;
+    }
+
+    this.bridge = new EffectsBridge(this.config);
+    if (!this.bridge.attach(this.terminalElement)) {
+      this.bridge = null;
+      this.log('css-fallback: pipeline-init-failed');
+      this.applyCSSFallback();
+      return;
+    }
+
+    this.bridge.setContextEventCallbacks(
+      () => this.handleContextLost(),
+      () => this.handleContextRestored()
+    );
+
+    this.watchdog = new PerfWatchdog((reason) => this.demoteToCSS(reason));
+    this.bridge.setCaptureWorkCallback(() => this.watchdog?.markBlockingWork());
+    this.watchdog.start();
+    this.log('webgl pipeline active');
+  }
+
+  private handleContextLost(): void {
+    if (this.contextLossTimer !== null) return;
+    this.contextLossTimer = window.setTimeout(() => {
+      this.contextLossTimer = null;
+      this.demoteToCSS('context-lost');
+    }, 3000);
+  }
+
+  private handleContextRestored(): void {
+    if (this.contextLossTimer !== null) {
+      clearTimeout(this.contextLossTimer);
+      this.contextLossTimer = null;
     }
   }
 
-  /**
-   * Apply CSS fallback classes and overlay elements to terminal.
-   */
+  private demoteToCSS(reason: string): void {
+    this.log(`css-fallback (demoted): ${reason}`);
+    this.watchdog?.stop();
+    this.watchdog = null;
+    if (this.contextLossTimer !== null) {
+      clearTimeout(this.contextLossTimer);
+      this.contextLossTimer = null;
+    }
+    this.bridge?.detach();
+    this.bridge = null;
+    // Static variant only: animated CSS overlays cost more than the WebGL
+    // quad on weak GPUs, and demotion is one-way.
+    this.tier = 'minimal';
+    this.config = this.normalizeConfig(getCRTConfig('minimal'));
+    this.applyCSSFallback();
+  }
+
   private applyCSSFallback(): void {
     if (!this.terminalElement) return;
 
+    this.terminalElement.classList.remove('crt-terminal--webgl-active');
     this.terminalElement.classList.add('crt-effects--css');
 
     if (this.tier === 'low') {
@@ -102,30 +161,15 @@ export class CRTEffectsManager {
       this.terminalElement.classList.add('crt-effects--css--minimal');
     }
 
-    // Add flicker if not reduced motion and tier supports it
-    if (!this.reducedMotion && this.tier !== 'minimal') {
+    const allowAnimation = !this.reducedMotion && this.tier !== 'minimal';
+
+    if (allowAnimation) {
       this.terminalElement.classList.add('crt-effects--css--flicker');
-    }
-
-    // Add jitter if not reduced motion
-    if (!this.reducedMotion && this.tier === 'high') {
-      this.terminalElement.classList.add('crt-effects--css--jitter');
-    }
-
-    // Add scanning beam element
-    if (!this.reducedMotion && this.tier !== 'minimal') {
       this.addScanningBeam();
-    }
-
-    // Add noise overlay element
-    if (this.tier !== 'minimal') {
       this.addNoiseOverlay();
     }
   }
 
-  /**
-   * Add scanning beam element to terminal.
-   */
   private addScanningBeam(): void {
     if (!this.terminalElement) return;
     if (this.terminalElement.querySelector('.crt-scanning-beam')) return;
@@ -135,9 +179,6 @@ export class CRTEffectsManager {
     this.terminalElement.appendChild(beam);
   }
 
-  /**
-   * Add noise overlay element to terminal.
-   */
   private addNoiseOverlay(): void {
     if (!this.terminalElement) return;
     if (this.terminalElement.querySelector('.crt-noise-overlay')) return;
@@ -147,9 +188,6 @@ export class CRTEffectsManager {
     this.terminalElement.appendChild(noise);
   }
 
-  /**
-   * Remove CSS fallback overlay elements.
-   */
   private removeCSSFallbackElements(): void {
     if (!this.terminalElement) return;
 
@@ -160,9 +198,6 @@ export class CRTEffectsManager {
     if (noise) noise.remove();
   }
 
-  /**
-   * Remove CSS fallback classes.
-   */
   private removeCSSFallback(): void {
     if (!this.terminalElement) return;
 
@@ -177,11 +212,8 @@ export class CRTEffectsManager {
     this.removeCSSFallbackElements();
   }
 
-  /**
-   * Enable CRT effects.
-   */
   enable(): void {
-    if (this.isEnabled || this.reducedMotion) return;
+    if (this.isEnabled) return;
 
     this.isEnabled = true;
 
@@ -190,9 +222,6 @@ export class CRTEffectsManager {
     }
   }
 
-  /**
-   * Disable CRT effects.
-   */
   disable(): void {
     if (!this.isEnabled) return;
 
@@ -203,28 +232,24 @@ export class CRTEffectsManager {
     }
   }
 
-  /**
-   * Update CRT configuration.
-   * @param config - New configuration values
-   */
   updateConfig(config: CRTConfig): void {
-    this.config = config;
-
-    // Respect high contrast
-    if (this.highContrast) {
-      this.config = { ...this.config, bloomStrength: 0 };
-    }
+    this.config = this.normalizeConfig(config);
 
     if (this.bridge) {
       this.bridge.updateConfig(this.config);
     }
   }
 
-  /**
-   * Clean up all effects and resources.
-   */
   destroy(): void {
     this.disable();
+
+    this.watchdog?.stop();
+    this.watchdog = null;
+
+    if (this.contextLossTimer !== null) {
+      clearTimeout(this.contextLossTimer);
+      this.contextLossTimer = null;
+    }
 
     if (this.bridge) {
       this.bridge.detach();
@@ -233,5 +258,9 @@ export class CRTEffectsManager {
 
     this.removeCSSFallback();
     this.terminalElement = null;
+  }
+
+  private log(msg: string): void {
+    console.info(`[CRT] ${msg}`);
   }
 }

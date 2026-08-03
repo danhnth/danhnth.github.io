@@ -2,12 +2,14 @@ import './styles/reset.css';
 import './styles/tokens.css';
 import './styles/terminal.css';
 import './styles/mobile.css';
+import './styles/control-panel.css';
 import './effects/css-fallback.css';
 
 import { Terminal } from './terminal/terminal.ts';
 import { CommandRegistry } from './commands/registry.ts';
 import { PluginManager } from './commands/plugin.ts';
 import { CRTEffectsManager } from './effects/crt-manager.ts';
+import { ShaderControlPanel } from './effects/control-panel.ts';
 import { detectGPUTier, getCRTConfig } from './utils/gpu-detect.ts';
 import { BootSequence } from './boot/boot-sequence.ts';
 import { initAudioIntegration } from './audio/integration.ts';
@@ -83,6 +85,12 @@ async function main(): Promise<void> {
   const crtManager = new CRTEffectsManager(gpuTier, crtConfig);
   crtManager.setTerminalElement(terminal.getElement());
   crtManager.initialize();
+  crtManager.enable();
+
+  // 7b. Live shader tuning panel (F9)
+  new ShaderControlPanel(crtConfig, (tuned) => {
+    crtManager.updateConfig(tuned);
+  });
 
   // 8. Initialize touch keyboard (mobile)
   new TouchKeyboard(terminal.getElement(), (key) => {

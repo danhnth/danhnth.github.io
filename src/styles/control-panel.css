@@ -1,0 +1,95 @@
+/* ============================================================
+   CRT TERMINAL — Shader Tuning Panel (dev tool, F9)
+   Deliberately NOT styled as CRT content: it must render
+   outside the simulation so it stays readable while tuning.
+   ============================================================ */
+
+.crt-tuner {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 9999;
+  display: none;
+  width: 320px;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  background: rgba(12, 14, 16, 0.94);
+  border-left: 1px solid #2c3238;
+  color: #d6dde4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+.crt-tuner--open {
+  display: block;
+}
+
+.crt-tuner__header {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2c3238;
+  color: #8fa3b5;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.crt-tuner__group {
+  margin: 14px 0 6px;
+  color: #6f8496;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.crt-tuner__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  margin-bottom: 7px;
+}
+
+.crt-tuner__label {
+  color: #b9c4cd;
+}
+
+.crt-tuner__value {
+  color: #7fd7a0;
+  font-variant-numeric: tabular-nums;
+}
+
+.crt-tuner__slider {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  accent-color: #4fb783;
+  cursor: pointer;
+}
+
+.crt-tuner__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #2c3238;
+}
+
+.crt-tuner__button {
+  flex: 1;
+  padding: 6px 8px;
+  background: #1b2026;
+  border: 1px solid #333b43;
+  border-radius: 3px;
+  color: #cdd6de;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.crt-tuner__button:hover {
+  background: #242b32;
+  border-color: #47525c;
+}

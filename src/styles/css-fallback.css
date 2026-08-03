@@ -1,0 +1,110 @@
+/* ============================================================
+   CRT TERMINAL — CSS Fallback Effects
+   Applied when WebGL is unavailable or GPU tier is low/minimal.
+   ============================================================ */
+
+/* ── Scanline Overlay ────────────────────────────────────── */
+.crt-effects--css::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--crt-z-scanlines, 20);
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, var(--crt-scanline-dark, 0.18)) 0px,
+    rgba(0, 0, 0, var(--crt-scanline-dark, 0.18)) 1px,
+    transparent 1px,
+    transparent calc(1px + var(--crt-scanline-gap, 2px))
+  );
+  opacity: var(--crt-scanline-opacity, 0.25);
+}
+
+/* ── Vignette Overlay ────────────────────────────────────── */
+.crt-effects--css::after {
+  content: '';
+  position: absolute;
+  inset: var(--crt-overscan, -3px);
+  pointer-events: none;
+  z-index: calc(var(--crt-z-scanlines, 20) + 1);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* ── Flicker Animation ───────────────────────────────────── */
+.crt-effects--css--flicker {
+  animation: crt-flicker var(--crt-flicker-speed, 0.1s) infinite;
+}
+
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: calc(1 - var(--crt-flicker-intensity, 0.05)); }
+}
+
+/* ── Scanning Beam ───────────────────────────────────────── */
+.crt-scanning-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--crt-beam-height, 120px);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(51, 255, 102, var(--crt-beam-opacity, 0.7)) 45%,
+    rgba(51, 255, 102, var(--crt-beam-opacity, 0.7)) 55%,
+    transparent 100%
+  );
+  filter: blur(var(--crt-beam-blur, 8px));
+  pointer-events: none;
+  z-index: calc(var(--crt-z-scanlines, 20) + 2);
+  animation: crt-scan-beam var(--crt-beam-speed, 8s) linear infinite;
+}
+
+@keyframes crt-scan-beam {
+  0% { top: calc(-1 * var(--crt-beam-height, 120px)); }
+  100% { top: 100%; }
+}
+
+/* ── Noise Overlay ───────────────────────────────────────── */
+.crt-noise-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: calc(var(--crt-z-scanlines, 20) + 3);
+  opacity: var(--crt-noise-opacity, 0.06);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  mix-blend-mode: overlay;
+}
+
+/* ── Jitter Animation ────────────────────────────────────── */
+.crt-effects--css--jitter {
+  animation: crt-jitter var(--crt-jitter-speed, 0.08s) steps(2) infinite;
+}
+
+@keyframes crt-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(var(--crt-jitter-x, 0.3px), var(--crt-jitter-y, 0.15px)); }
+  75% { transform: translate(calc(-1 * var(--crt-jitter-x, 0.3px)), calc(-1 * var(--crt-jitter-y, 0.15px))); }
+}
+
+/* ── Low Tier Adjustments ────────────────────────────────── */
+.crt-effects--css--low::before {
+  opacity: calc(var(--crt-scanline-opacity, 0.25) * 0.6);
+}
+
+.crt-effects--css--low .crt-scanning-beam {
+  opacity: 0.3;
+}
+
+/* ── Minimal Tier Adjustments ────────────────────────────── */
+.crt-effects--css--minimal::before {
+  opacity: calc(var(--crt-scanline-opacity, 0.25) * 0.4);
+}
+
+.crt-effects--css--minimal::after {
+  opacity: 0.5;
+}

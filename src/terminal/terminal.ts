@@ -79,6 +79,13 @@ export class Terminal implements ITerminal {
     }
   }
 
+  replaceLastLine(line: OutputLine, announce = false): void {
+    this.outputBuffer.replaceLastLine(line);
+    if (announce && line.type !== 'ascii' && line.text) {
+      this.ariaLive.announceLines([line.text]);
+    }
+  }
+
   clear(): void {
     this.outputBuffer.clear();
     this.ariaLive.announce('Terminal cleared');

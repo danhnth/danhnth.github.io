@@ -3,7 +3,6 @@
  */
 
 export { BootSequence } from './boot-sequence.ts';
-export { warmupShaders } from './warmup.ts';
 
 export { biosPostPhase } from './phases/bios-post.ts';
 export { hardwareDetectPhase } from './phases/hardware-detect.ts';

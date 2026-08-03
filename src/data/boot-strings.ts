@@ -65,6 +65,7 @@ export const INIT_STRINGS = {
 } as const;
 
 export const LOGIN_STRINGS = {
+  hostname: 'danhnth',
   loginPrompt: 'login: ',
   passwordPrompt: 'Password: ',
   loginSuccess: 'Login successful',

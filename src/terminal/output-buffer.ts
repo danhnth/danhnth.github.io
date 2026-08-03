@@ -26,6 +26,18 @@ export class OutputBuffer {
     this.scrollToBottom();
   }
 
+  /** Replace the last line in place, or append if the buffer is empty. */
+  replaceLastLine(line: OutputLine): void {
+    const last = this.container.lastElementChild;
+    if (!last) {
+      this.append([line]);
+      return;
+    }
+    const el = this.createLineElement(line);
+    this.container.replaceChild(el, last);
+    this.scrollToBottom();
+  }
+
   /** Clear all output. */
   clear(): void {
     this.container.innerHTML = '';
@@ -33,9 +45,16 @@ export class OutputBuffer {
 
   /** Scroll to the bottom of the output. */
   scrollToBottom(): void {
-    // Use requestAnimationFrame to ensure DOM has updated
+    const el = this.container;
+    // Jump instantly: `behavior:'instant'` is unsupported in some engines and
+    // falls back to `auto` (obeys CSS smooth-scroll), which restarts an
+    // animation on every 25-30ms update and leaves the viewport stuck.
+    // Overriding the inline style works everywhere; we restore it via rAF so
+    // user wheel/scrollbar scrolling keeps its smooth behavior.
+    el.style.scrollBehavior = 'auto';
+    el.scrollTop = el.scrollHeight;
     requestAnimationFrame(() => {
-      this.container.scrollTop = this.container.scrollHeight;
+      el.style.removeProperty('scroll-behavior');
     });
   }
 

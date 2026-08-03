@@ -16,8 +16,16 @@
   line-height: var(--crt-terminal-line-height);
   color: var(--crt-green);
   z-index: var(--crt-z-terminal);
-  border-radius: 24px;
+  /* Real CRT glass has a large, subtle corner radius — not a phone-app
+     rounded rectangle. The curvature belongs in the shader, not the border. */
+  border-radius: 6px;
   border: 12px solid #1a1a1a;
+
+  /* Character-cell grid: one glyph size, fixed line box, no tracking. */
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-kerning: none;
+  tab-size: 8;
 
   /* Multi-layered bezel: outer shadow, inner depth, glass sheen */
   box-shadow:
@@ -30,19 +38,11 @@
     inset 2px 2px 4px rgba(255, 255, 255, 0.03);
 
   /* ── CRT Content Effects ───────────────────────────────── */
-  /* Brightness boost */
-  filter: brightness(var(--crt-brightness, 1.15));
-
-  /* Multi-layer phosphor bloom / glow on text */
-  text-shadow:
-    0 0 var(--crt-bloom-spread-1) var(--crt-glow-color),
-    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color-dim),
-    0 0 var(--crt-bloom-spread-3) rgba(51, 255, 102, 0.15),
-    0 0 var(--crt-bloom-spread-4) rgba(51, 255, 102, 0.05);
-
-  /* RGB chromatic aberration shift */
-  --crt-rgb-red-glow: 0 calc(var(--crt-rgb-offset) * 0.5) var(--crt-bloom-spread-2) var(--crt-rgb-red);
-  --crt-rgb-blue-glow: 0 calc(var(--crt-rgb-offset) * -0.5) var(--crt-bloom-spread-2) var(--crt-rgb-blue);
+  /* Glow is produced by the WebGL bloom pass, which reads this layer as its
+     source texture. Adding a CSS text-shadow here would be blurred a second
+     time by the shader — that double-bake is what washes out contrast and
+     reads as "fake CRT". Keep this layer crisp; let the shader do the glow. */
+  text-shadow: 0 0 1px rgba(51, 255, 102, 0.35);
 }
 
 /* ── Terminal Output Area ────────────────────────────────── */
@@ -117,16 +117,13 @@
   word-break: break-word;
 }
 
-/* Heading */
+/* Heading — same cell as body text; emphasis comes from colour only.
+   A real terminal cannot render a larger glyph. */
 .output-heading,
 .crt-line--heading {
   color: var(--crt-heading);
-  font-size: var(--crt-font-size-xl);
-  font-weight: 700;
-  letter-spacing: var(--crt-letter-spacing);
-  margin-top: var(--crt-space-4);
-  margin-bottom: var(--crt-space-2);
-  text-shadow: var(--crt-shadow-glow-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* Error */
@@ -157,8 +154,6 @@
 .output-ascii,
 .crt-line--ascii {
   color: var(--crt-ascii);
-  font-size: var(--crt-font-size-sm);
-  line-height: var(--crt-line-height-tight);
   white-space: pre;
   overflow-x: auto;
 }
@@ -183,8 +178,6 @@
 /* ── ASCII Box Drawing ───────────────────────────────────── */
 .crt-ascii-box {
   color: var(--crt-ascii);
-  font-size: var(--crt-font-size-sm);
-  line-height: var(--crt-line-height-tight);
   white-space: pre;
   display: inline-block;
 }
@@ -226,65 +219,17 @@
 
 /* ── CRT Content-Level Effects ───────────────────────────── */
 
-/* Phosphor glow enhancement on interactive elements */
-.crt-terminal__prompt,
-.crt-terminal__cursor {
-  text-shadow:
-    0 0 var(--crt-bloom-spread-1) var(--crt-glow-color),
-    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color),
-    0 0 var(--crt-bloom-spread-3) rgba(51, 255, 102, 0.3);
-}
 
-/* RGB shift on headings for chromatic aberration feel */
-.output-heading,
-.crt-line--heading {
-  text-shadow:
-    calc(var(--crt-rgb-offset) * 0.5) 0 var(--crt-bloom-spread-1) rgba(255, 0, 0, 0.3),
-    calc(var(--crt-rgb-offset) * -0.5) 0 var(--crt-bloom-spread-1) rgba(0, 80, 255, 0.3),
-    0 0 var(--crt-bloom-spread-2) var(--crt-glow-color-dim);
-}
 
-/* Burn-in / ghosting effect on static elements (prompt) */
-.crt-terminal__prompt {
-  position: relative;
-}
-
-.crt-terminal__prompt::after {
-  content: attr(data-prompt);
-  position: absolute;
-  top: 0;
-  left: 0;
-  color: transparent;
-  text-shadow:
-    0 0 var(--crt-ghost-blur) rgba(51, 255, 102, var(--crt-ghost-opacity));
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* Chroma color / phosphor tinting overlay */
 .crt-terminal__output {
   position: relative;
 }
 
-.crt-terminal__output::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(10, 80, 20, 0.02) 0%,
-    rgba(20, 120, 40, 0.04) 50%,
-    rgba(10, 80, 20, 0.02) 100%
-  );
-  mix-blend-mode: overlay;
-  z-index: 1;
-}
-
-/* Low-res feel: slightly pixelated rendering on text */
+/* Phosphor dots are square and hard-edged. Antialiasing rounds them into
+   grey mush once the shader magnifies the captured text. */
 .crt-terminal {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
   image-rendering: pixelated;
 }
 

@@ -14,15 +14,17 @@ import { BootSequence } from '../boot/boot-sequence';
 
 const INDICATOR_CLASS = 'audio-indicator';
 
+const INDICATOR_OFF = '[ SND OFF ]';
+const INDICATOR_ON = '[ SND  ON ]';
+
 function createIndicator(container: HTMLElement): HTMLDivElement {
   const indicator = document.createElement('div');
   indicator.className = INDICATOR_CLASS;
-  indicator.textContent = '🔇 Click for sound';
+  indicator.textContent = INDICATOR_OFF;
   indicator.title = 'Click to enable sound';
   indicator.style.position = 'absolute';
   indicator.style.top = '0.5rem';
   indicator.style.right = '0.5rem';
-  indicator.style.fontSize = '0.75rem';
   indicator.style.color = '#1a8033';
   indicator.style.cursor = 'pointer';
   indicator.style.userSelect = 'none';
@@ -34,16 +36,16 @@ function createIndicator(container: HTMLElement): HTMLDivElement {
 
 function updateIndicator(indicator: HTMLDivElement): void {
   if (!audioManager.isReady()) {
-    indicator.textContent = '🔇 Click for sound';
+    indicator.textContent = INDICATOR_OFF;
     indicator.title = 'Click to enable sound';
     return;
   }
 
   if (audioManager.isMuted()) {
-    indicator.textContent = '🔇';
+    indicator.textContent = INDICATOR_OFF;
     indicator.title = 'Audio muted (Ctrl+M to unmute)';
   } else {
-    indicator.textContent = '🔊';
+    indicator.textContent = INDICATOR_ON;
     indicator.title = 'Audio on (Ctrl+M to mute)';
   }
 }

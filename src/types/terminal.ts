@@ -15,6 +15,7 @@ export interface CursorPosition {
 
 export interface Terminal {
   writeOutput(lines: OutputLine[]): void;
+  replaceLastLine(line: OutputLine, announce?: boolean): void;
   clear(): void;
   focus(): void;
   setState(state: TerminalState): void;

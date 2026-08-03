@@ -1,7 +1,8 @@
 export {
   detectGPUTier,
   getCRTConfig,
-  warmupShaders,
+  checkWebGLCapability,
+  applyReducedMotion,
   getGPUInfo,
 } from './gpu-detect';
 

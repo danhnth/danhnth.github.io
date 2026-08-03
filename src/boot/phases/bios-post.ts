@@ -11,7 +11,6 @@
  */
 
 import type { Terminal } from '../../types/terminal';
-import { warmupShaders } from '../warmup';
 import { audioManager } from '../../audio/audio-manager';
 import {
   sleep,
@@ -84,9 +83,6 @@ export async function biosPostPhase(terminal: Terminal): Promise<void> {
       type: 'success',
     },
   ]);
-
-  // Trigger shader warmup early during memory count
-  warmupShaders();
 
   await sleep(200);
 

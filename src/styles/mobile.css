@@ -10,12 +10,10 @@
     height: 100dvh; /* dynamic viewport height for mobile browsers */
   }
 
-  /* ── Larger font for readability on small screens ──────── */
+  /* ── Larger cell for readability on small screens ──────── */
+  /* Scale the ONE glyph size; do not reintroduce a size scale. */
   .crt-terminal {
     --crt-font-size-base: 1.125rem;
-    --crt-font-size-sm: 1rem;
-    --crt-font-size-md: 1.25rem;
-    --crt-font-size-xl: 1.75rem;
   }
 
   /* ── Output area adjusts when keyboard is visible ──────── */
@@ -111,7 +109,7 @@
   border-radius: var(--crt-radius-sm);
   color: var(--crt-green);
   font-family: var(--crt-font-mono);
-  font-size: var(--crt-font-size-sm);
+  font-size: var(--crt-key-label-size);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -140,7 +138,7 @@
 .touch-keyboard__key--special {
   max-width: 72px;
   flex: 1.2;
-  font-size: var(--crt-font-size-xs);
+  font-size: var(--crt-key-label-size-sm);
   letter-spacing: 0.02em;
 }
 

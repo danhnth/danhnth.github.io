@@ -1,8 +1,21 @@
 /**
- * GLSL shader source code for CRT terminal overlay effects.
- * These shaders render CRT screen-surface artifacts (scanlines, noise, beam,
- * vignette, horizontal sync) on a transparent overlay canvas.
- * Content effects (glow, RGB shift, brightness, jitter, burn-in) are handled via CSS.
+ * GLSL shader source for the CRT terminal simulation.
+ *
+ * The beam reconstruction is ported from Timothy Lottes' public-domain CRT
+ * shader (Shadertoy "FixingPixelArt" / libretro crt-lottes), with the
+ * luminance-dependent beam width taken from cgwg's crt-geom.
+ *
+ * The essential idea: do NOT treat scanlines as a texture-space grating like
+ * `sin(uv.y * resolution.y)`. That beats against the physical pixel grid and
+ * shimmers. Instead, work in EMULATED pixel space — measure the distance from
+ * each output fragment to the nearest emulated scanline centre, and evaluate a
+ * Gaussian beam profile at that distance. The scanline pattern then follows the
+ * image through barrel distortion instead of sliding across it.
+ *
+ * The other half of authenticity is beam blooming: a real electron beam widens
+ * as it gets brighter, so bright text fills the gaps between scanlines while
+ * dark areas keep them wide open. Fixed-width scanlines are the single most
+ * common reason a CRT shader reads as a cheap overlay.
  */
 
 export const vertexShaderSource = `
@@ -17,299 +30,236 @@ void main() {
 `;
 
 export const fragmentShaderOverlay = `
-precision mediump float;
+precision highp float;
+
 varying vec2 v_texCoord;
+
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform vec2 u_sourceSize;
+
 uniform float u_scanlineIntensity;
 uniform float u_bloomStrength;
 uniform float u_curvatureAmount;
 uniform float u_flickerRate;
 uniform float u_noiseIntensity;
-uniform float u_beamIntensity;
 uniform float u_vignetteStrength;
-uniform float u_hSyncIntensity;
-uniform float u_rgbShift;
 uniform float u_brightness;
 uniform float u_jitterIntensity;
 uniform float u_phosphorMaskIntensity;
-uniform float u_colorBleedIntensity;
-uniform float u_reflectionIntensity;
 uniform float u_cornerPinch;
-uniform float u_moiréScale;
+uniform float u_burnInStrength;
+uniform float u_sourceOpacity;
 
-// ── Hash / Noise Functions ──────────────────────────────────
+uniform float u_hardScan;
+uniform float u_hardPix;
+uniform float u_beamMinWidth;
+uniform float u_beamMaxWidth;
+uniform float u_beamPower;
+uniform float u_maskPitch;
+uniform float u_maskDark;
+uniform float u_maskLight;
+uniform float u_bloomThreshold;
+uniform float u_bloomKnee;
+uniform float u_crtGamma;
+uniform float u_monitorGamma;
+
+uniform sampler2D u_sourceTexture;
+uniform sampler2D u_noiseTexture;
+uniform sampler2D u_bloomTexture;
+uniform sampler2D u_burnInTexture;
+
+// ── Gamma ───────────────────────────────────────────────────
+// All beam/mask/bloom math must happen in linear light. Blending phosphor
+// contributions in gamma space is what makes naive CRT shaders look washed out.
+
+vec3 toLinear(vec3 c) {
+  return pow(max(c, vec3(0.0)), vec3(u_crtGamma));
+}
+
+vec3 toGamma(vec3 c) {
+  return pow(max(c, vec3(0.0)), vec3(1.0 / u_monitorGamma));
+}
+
+float luma(vec3 c) {
+  return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
+// ── Hash / Noise ────────────────────────────────────────────
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
-float hash1(float n) {
-  return fract(sin(n) * 43758.5453);
+// ── Geometry ────────────────────────────────────────────────
+
+vec2 warp(vec2 uv) {
+  vec2 centered = uv * 2.0 - 1.0;
+  // Lottes-style warp: each axis bulges as a function of the other.
+  centered *= vec2(
+    1.0 + (centered.y * centered.y) * u_curvatureAmount,
+    1.0 + (centered.x * centered.x) * u_curvatureAmount
+  );
+  // Corner pinch tightens the diagonals without deepening the barrel.
+  float corner = abs(centered.x * centered.y);
+  centered *= 1.0 + corner * u_cornerPinch;
+  return centered * 0.5 + 0.5;
 }
 
-// Value noise with interpolation
-float noise(vec2 st) {
-  vec2 i = floor(st);
-  vec2 f = fract(st);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  float a = hash(i);
-  float b = hash(i + vec2(1.0, 0.0));
-  float c = hash(i + vec2(0.0, 1.0));
-  float d = hash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+// ── Beam Reconstruction ─────────────────────────────────────
+
+// Signed distance from 'pos' to the nearest emulated texel centre,
+// measured in emulated pixels.
+vec2 dist(vec2 pos) {
+  vec2 p = pos * u_sourceSize;
+  return -((p - floor(p)) - vec2(0.5));
 }
 
-// Structured/banded noise for analog interference
-float bandedNoise(vec2 st, float time) {
-  float band = floor(st.y * 40.0 + time * 2.0);
-  float bandHash = hash1(band * 17.3 + time * 0.5);
-  float fineNoise = noise(st * vec2(8.0, 2.0) + time * 3.0);
-  return bandHash * 0.7 + fineNoise * 0.3;
-}
-
-// ── Barrel Distortion with Corner Pinch ─────────────────────
-
-vec2 barrelDistort(vec2 uv, float curvature, float cornerPinch) {
-  vec2 centered = uv - 0.5;
-  float r = length(centered);
-
-  // Base barrel distortion
-  float barrel = 1.0 + curvature * r * r;
-
-  // Corner pinch: extra distortion near corners
-  float cornerFactor = abs(centered.x * centered.y) * 4.0;
-  float pinch = 1.0 + cornerPinch * cornerFactor * r;
-
-  vec2 distorted = centered * barrel * pinch + 0.5;
-  return clamp(distorted, 0.0, 1.0);
-}
-
-// ── Aperture Grille / Phosphor Mask ─────────────────────────
-
-float phosphorMask(vec2 uv, float intensity) {
-  // RGB vertical stripe pattern at sub-pixel level
-  float stripe = sin(uv.x * u_resolution.x * 3.14159 * 1.0) * 0.5 + 0.5;
-  // Sharpen the mask
-  stripe = pow(stripe, 0.6);
-  return mix(1.0, stripe, intensity);
-}
-
-// ── Organic Scanline Moiré ──────────────────────────────────
-
-float organicScanlines(vec2 uv, float time, float moireScale) {
-  // Base scanline
-  float baseScanline = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
-  baseScanline = pow(baseScanline, 0.4);
-
-  // Moiré interference: slightly offset frequency layers
-  float moire1 = sin(uv.y * u_resolution.y * 3.14159 * moireScale + time * 0.7) * 0.5 + 0.5;
-  float moire2 = sin(uv.y * u_resolution.y * 3.14159 * moireScale * 1.02 + time * 0.3) * 0.5 + 0.5;
-
-  // Combine with slight phase variation for organic feel
-  float interference = mix(moire1, moire2, 0.5);
-  interference = pow(interference, 0.5);
-
-  return mix(baseScanline, interference, 0.3);
-}
-
-// ── Horizontal Color Bleed / Smear ──────────────────────────
-
-float colorBleed(vec2 uv, float intensity, float time) {
-  // Simulate signal delay causing horizontal smear
-  float bleed = 0.0;
-  float delay = 0.003 * intensity;
-  for (int i = 1; i <= 4; i++) {
-    float fi = float(i);
-    bleed += sin((uv.x + delay * fi) * u_resolution.x * 0.5 + time * fi * 2.0) * (0.5 / fi);
+vec3 fetch(vec2 pos, vec2 off) {
+  pos = floor(pos * u_sourceSize + off) / u_sourceSize;
+  if (max(abs(pos.x - 0.5), abs(pos.y - 0.5)) > 0.5) {
+    return vec3(0.0);
   }
-  return bleed * intensity * 0.15;
+  return toLinear(texture2D(u_sourceTexture, pos).rgb);
 }
 
-// ── Glass Glare / Screen Reflection ─────────────────────────
-
-float glassGlare(vec2 uv, float intensity, float time) {
-  // Subtle angled highlight that shifts slightly
-  float angle = 0.3 + sin(time * 0.1) * 0.05;
-  float glareLine = uv.x * cos(angle) + uv.y * sin(angle);
-  float glare = smoothstep(0.45, 0.55, glareLine) * smoothstep(0.65, 0.55, glareLine);
-  // Soften and scale
-  glare *= exp(-pow((uv.y - 0.3) * 3.0, 2.0));
-  return glare * intensity;
+float gaus(float pos, float scale) {
+  return exp2(scale * pos * pos);
 }
 
-// ── Horizontal Sync Tearing ─────────────────────────────────
-
-float hSyncTear(vec2 uv, float time, float intensity) {
-  // Occasional horizontal displacement wave mimicking analog signal loss
-  float syncPhase = fract(time * 0.15);
-  float syncOn = smoothstep(0.0, 0.03, syncPhase) * smoothstep(0.15, 0.1, syncPhase);
-
-  // Multiple tear lines at different frequencies
-  float tear1 = sin(uv.y * 120.0 + time * 18.0) * syncOn;
-  float tear2 = sin(uv.y * 250.0 + time * 12.0) * syncOn * 0.5;
-  float tear3 = step(0.7, sin(uv.y * 400.0 + time * 8.0)) * syncOn * 0.3;
-
-  return (tear1 + tear2 + tear3) * intensity;
+// Beam width grows with luminance — this is the blooming that lets bright
+// glyphs fill the scanline gaps while dark areas stay banded.
+float beamScale(float lum) {
+  float width = mix(
+    u_beamMinWidth,
+    u_beamMaxWidth,
+    pow(clamp(lum, 0.0, 1.0), 1.0 / max(u_beamPower, 0.001))
+  );
+  return u_hardScan / max(width * width, 0.0001);
 }
 
-// ── Vignette with Barrel-Corrected Falloff ──────────────────
-
-float barrelVignette(vec2 uv, float strength, float curvature) {
-  vec2 centered = uv - 0.5;
-  float r = length(centered);
-  // Use barrel-corrected distance for more natural falloff
-  float barrelR = r * (1.0 + curvature * r * r);
-  float vignette = smoothstep(0.8, 0.3, barrelR);
-  return mix(1.0, vignette, strength);
+// 3-tap horizontal reconstruction on one scanline.
+vec3 horz3(vec2 pos, float off) {
+  vec3 b = fetch(pos, vec2(-1.0, off));
+  vec3 c = fetch(pos, vec2( 0.0, off));
+  vec3 d = fetch(pos, vec2( 1.0, off));
+  float dst = dist(pos).x;
+  float wb = gaus(dst - 1.0, u_hardPix);
+  float wc = gaus(dst + 0.0, u_hardPix);
+  float wd = gaus(dst + 1.0, u_hardPix);
+  return (b * wb + c * wc + d * wd) / (wb + wc + wd);
 }
 
-// ── Phosphor Persistence Glow (Bloom) ───────────────────────
-
-float phosphorBloom(vec2 uv, float strength, float time) {
-  // Subtle bloom from bright areas — approximated with radial glow
-  vec2 centered = uv - 0.5;
-  float r = length(centered);
-  float bloom = exp(-r * r * 6.0) * strength * 0.12;
-
-  // Add time-varying phosphor persistence
-  float persistence = sin(time * 1.5 + r * 10.0) * 0.5 + 0.5;
-  bloom *= (0.7 + persistence * 0.3);
-
-  return bloom;
+// 5-tap horizontal reconstruction, used on the dominant scanline.
+vec3 horz5(vec2 pos, float off) {
+  vec3 a = fetch(pos, vec2(-2.0, off));
+  vec3 b = fetch(pos, vec2(-1.0, off));
+  vec3 c = fetch(pos, vec2( 0.0, off));
+  vec3 d = fetch(pos, vec2( 1.0, off));
+  vec3 e = fetch(pos, vec2( 2.0, off));
+  float dst = dist(pos).x;
+  float wa = gaus(dst - 2.0, u_hardPix);
+  float wb = gaus(dst - 1.0, u_hardPix);
+  float wc = gaus(dst + 0.0, u_hardPix);
+  float wd = gaus(dst + 1.0, u_hardPix);
+  float we = gaus(dst + 2.0, u_hardPix);
+  return (a * wa + b * wb + c * wc + d * wd + e * we) / (wa + wb + wc + wd + we);
 }
 
-// ── Main Fragment Shader ────────────────────────────────────
+// Weight of the scanline 'off' rows away, using a luminance-widened beam.
+float scanWeight(vec2 pos, float off, float lum) {
+  float dst = dist(pos).y;
+  return gaus(dst + off, beamScale(lum));
+}
+
+// Blend the three scanlines that can illuminate this fragment.
+vec3 tri(vec2 pos) {
+  vec3 a = horz3(pos, -1.0);
+  vec3 b = horz5(pos,  0.0);
+  vec3 c = horz3(pos,  1.0);
+
+  float wa = scanWeight(pos, -1.0, luma(a));
+  float wb = scanWeight(pos,  0.0, luma(b));
+  float wc = scanWeight(pos,  1.0, luma(c));
+
+  vec3 beam = a * wa + b * wb + c * wc;
+
+  // Scanline depth is the contrast between beam peak and the gaps. At
+  // intensity 0 the reconstruction is normalised back to a flat image.
+  float sum = wa + wb + wc;
+  vec3 flat_ = beam / max(sum, 0.0001);
+  return mix(flat_, beam, u_scanlineIntensity);
+}
+
+// ── Aperture Grille ─────────────────────────────────────────
+// Locked to gl_FragCoord, NOT to uv: the mask belongs to the physical
+// display's pixel columns. Deriving it from warped uv makes it moire.
+
+vec3 apertureGrille(vec2 fragCoord) {
+  vec3 mask = vec3(u_maskDark);
+  float cell = fract(fragCoord.x * (1.0 / max(u_maskPitch, 1.0)));
+  if (cell < 0.333) {
+    mask.r = u_maskLight;
+  } else if (cell < 0.666) {
+    mask.g = u_maskLight;
+  } else {
+    mask.b = u_maskLight;
+  }
+  return mix(vec3(1.0), mask, u_phosphorMaskIntensity);
+}
+
+// ── Main ────────────────────────────────────────────────────
 
 void main() {
   vec2 uv = v_texCoord;
-  float time = u_time;
 
-  // === JITTER (applied before distortion) ===
-  float jitterX = (hash(vec2(floor(time * 30.0), 0.0)) - 0.5) * u_jitterIntensity;
-  float jitterY = (hash(vec2(0.0, floor(time * 30.0))) - 0.5) * u_jitterIntensity * 0.5;
-  uv += vec2(jitterX, jitterY);
+  // Analog jitter, applied before geometry so it moves the whole raster.
+  float jx = (hash(vec2(floor(u_time * 30.0), 0.0)) - 0.5) * u_jitterIntensity;
+  float jy = (hash(vec2(0.0, floor(u_time * 30.0))) - 0.5) * u_jitterIntensity * 0.5;
+  uv += vec2(jx, jy);
 
-  // === BARREL DISTORTION WITH CORNER PINCH ===
-  vec2 curvedUV = barrelDistort(uv, u_curvatureAmount, u_cornerPinch);
+  vec2 pos = warp(uv);
 
-  // === CHROMATIC ABERRATION (per-channel radial) ===
-  vec2 centered = curvedUV - 0.5;
+  // Outside the tube: black bezel interior, no content.
+  if (max(abs(pos.x - 0.5), abs(pos.y - 0.5)) > 0.5) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  vec3 color = tri(pos);
+
+  // Phosphor persistence, already linear from the accumulation pass.
+  vec3 burnIn = texture2D(u_burnInTexture, pos).rgb * u_burnInStrength;
+  color += burnIn;
+
+  // Thresholded bloom: only genuinely bright phosphors halate. Blurring and
+  // re-adding the whole frame is what destroys contrast.
+  vec3 bloomSample = toLinear(texture2D(u_bloomTexture, pos).rgb);
+  float bl = luma(bloomSample);
+  float excess = max(bl - u_bloomThreshold, 0.0);
+  float soft = excess * excess / (excess + max(u_bloomKnee, 0.0001));
+  color += bloomSample * soft * u_bloomStrength;
+
+  // Aperture grille on the physical pixel grid.
+  color *= apertureGrille(gl_FragCoord.xy);
+
+  // Mains-hum flicker.
+  float flicker = 1.0 + (hash(vec2(floor(u_time * 60.0), 1.0)) - 0.5) * u_flickerRate;
+  color *= flicker;
+
+  // Vignette, using the warped radius so it follows the tube.
+  vec2 centered = pos - 0.5;
   float r = length(centered);
-  float aberration = u_rgbShift * r * r;
-  float rAngle = sin(time * 0.5) * aberration;
-  float bAngle = -cos(time * 0.3) * aberration;
+  color *= mix(1.0, smoothstep(0.85, 0.25, r), u_vignetteStrength);
 
-  // Per-channel radial offset
-  vec2 rOffset = normalize(centered + 0.001) * rAngle;
-  vec2 bOffset = normalize(centered + 0.001) * bAngle;
+  color *= u_brightness;
 
-  // === HORIZONTAL SYNC TEARING ===
-  float hSync = hSyncTear(curvedUV, time, u_hSyncIntensity);
+  // Signal grain, added in linear light before the display transfer.
+  vec3 grain = texture2D(u_noiseTexture, uv * 2.0 + fract(u_time)).rgb;
+  color += (grain - 0.5) * u_noiseIntensity;
 
-  // === ORGANIC SCANLINES WITH MOIRÉ ===
-  float scanline = organicScanlines(curvedUV, time, u_moiréScale);
-  float scanlineDarken = scanline * u_scanlineIntensity;
+  color *= u_sourceOpacity;
 
-  // === PHOSPHOR MASK (APERTURE GRILLE) ===
-  float phosphor = phosphorMask(curvedUV, u_phosphorMaskIntensity);
-
-  // === COLOR BLEED / HORIZONTAL SMEAR ===
-  float bleed = colorBleed(curvedUV, u_colorBleedIntensity, time);
-
-  // === GLASS GLARE / REFLECTION ===
-  float glare = glassGlare(curvedUV, u_reflectionIntensity, time);
-
-  // === STRUCTURED SIGNAL NOISE ===
-  float structuredNoise = bandedNoise(curvedUV, time);
-  float noiseVal = (structuredNoise - 0.5) * u_noiseIntensity;
-
-  // === SCANNING BEAM ===
-  float beamY = fract(time * 0.2);
-  float beamDist = abs(curvedUV.y - beamY);
-  float beam = exp(-beamDist * beamDist * 600.0) * u_beamIntensity;
-  float trailY = fract(beamY - 0.05);
-  float trailDist = abs(curvedUV.y - trailY);
-  float trail = exp(-trailDist * trailDist * 200.0) * u_beamIntensity * 0.4;
-
-  // === BARREL-CORRECTED VIGNETTE ===
-  float vignette = barrelVignette(curvedUV, u_vignetteStrength, u_curvatureAmount);
-
-  // === PHOSPHOR BLOOM ===
-  float bloom = phosphorBloom(curvedUV, u_bloomStrength, time);
-
-  // === FLICKER ===
-  float flicker = 1.0 + (hash(vec2(floor(time * 60.0), 0.0)) - 0.5) * u_flickerRate;
-
-  // === BURN-IN ===
-  float burnIn = smoothstep(0.4, 0.0, r) * 0.02;
-
-  // === BRIGHTNESS ===
-  float brightness = u_brightness;
-
-  // ── Combine Effects ──────────────────────────────────────
-
-  // Darken from scanlines and vignette
-  float darken = (scanlineDarken + (1.0 - vignette)) * flicker;
-
-  // Brighten from beam, bloom, burn-in
-  float brighten = (beam + trail + bloom + burnIn) * flicker * brightness;
-
-  // Grain from structured noise
-  float grain = noiseVal * flicker;
-
-  // H-sync displacement
-  float hSyncBright = abs(hSync) * flicker * 0.3;
-
-  // Color bleed contribution
-  float bleedBright = abs(bleed) * flicker * 0.2;
-
-  // Glass glare
-  float glareBright = glare * flicker;
-
-  // ── RGB Channel Assembly ─────────────────────────────────
-
-  // Apply chromatic aberration offsets per channel
-  vec2 rUV = clamp(curvedUV + rOffset, 0.0, 1.0);
-  vec2 bUV = clamp(curvedUV + bOffset, 0.0, 1.0);
-
-  // Base signal per channel (using distorted UVs for R/B shift)
-  float rSignal = brighten + grain * 0.5 + hSyncBright + bleedBright;
-  float gSignal = brighten + grain + hSyncBright + bleedBright;
-  float bSignal = brighten + grain * 0.5 + hSyncBright + bleedBright;
-
-  // Apply phosphor mask to each channel
-  float rMask = mix(1.0, phosphor, u_phosphorMaskIntensity * 0.5);
-  float gMask = phosphor;
-  float bMask = mix(1.0, phosphor, u_phosphorMaskIntensity * 0.5);
-
-  vec3 color;
-  color.r = rSignal * rMask;
-  color.g = gSignal * gMask;
-  color.b = bSignal * bMask;
-
-  // Add phosphor tint to glow areas
-  vec3 phosphorColor = vec3(0.15, 0.8, 0.25);
-  vec3 trailColor = vec3(0.08, 0.5, 0.15);
-  color += phosphorColor * beam;
-  color += trailColor * trail;
-
-  // Add h-sync artifacts
-  color += vec3(0.1, 0.3, 0.1) * hSyncBright;
-
-  // Add glass glare as white highlight
-  color += vec3(glareBright);
-
-  // ── Alpha Compositing ────────────────────────────────────
-
-  float darkAlpha = darken * 0.5;
-  float brightAlpha = (beam + trail + abs(grain) + hSyncBright + bloom + bleedBright + glareBright) * 0.45;
-  float alpha = darkAlpha + brightAlpha;
-  alpha = clamp(alpha, 0.0, 0.65);
-
-  // Clamp color
-  color = clamp(color, 0.0, 0.8);
-
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(toGamma(clamp(color, 0.0, 1.0)), 1.0);
 }
 `;

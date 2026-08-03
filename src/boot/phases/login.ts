@@ -9,60 +9,44 @@
 
 import type { Terminal } from '../../types/terminal';
 import { profile } from '../../data/profile';
-import { sleep } from '../typing';
+import { sleep, typePrefixed } from '../typing';
 import { LOGIN_STRINGS } from '../../data/boot-strings';
 
 const LOGIN_DATA = {
   username: 'guest',
   passwordLength: 8,
-  passwordChar: '•',
+  passwordChar: '*',
 };
 
-function getLoginName(): string {
-  // Derive a short login name from the profile email
-  const emailUser = profile.email.split('@')[0];
-  return emailUser || LOGIN_DATA.username;
-}
-
 export async function loginPhase(terminal: Terminal): Promise<void> {
-  const loginName = getLoginName();
+  terminal.writeOutput([{ text: '', type: 'text' as const }]);
 
-  terminal.writeOutput([
-    { text: '', type: 'text' as const },
-    { text: `${loginName}${LOGIN_STRINGS.loginPrompt}`, type: 'text' as const },
-  ]);
-
-  // Auto-type username character by character
-  let typedUsername = '';
-  for (const char of LOGIN_DATA.username) {
-    await sleep(120);
-    typedUsername += char;
-    terminal.writeOutput([
-      {
-        text: `${loginName} login: ${typedUsername}`,
-        type: 'text' as const,
-      },
-    ]);
-  }
+  await sleep(120);
+  await typePrefixed(
+    terminal,
+    `${LOGIN_STRINGS.hostname} ${LOGIN_STRINGS.loginPrompt}`,
+    LOGIN_DATA.username,
+    'text',
+    120
+  );
 
   await sleep(400);
 
-  // Password prompt
   terminal.writeOutput([
     { text: LOGIN_STRINGS.passwordPrompt, type: 'text' as const },
   ]);
 
-  // Auto-type password dots
   let typedPassword = '';
   for (let i = 0; i < LOGIN_DATA.passwordLength; i++) {
     await sleep(80);
     typedPassword += LOGIN_DATA.passwordChar;
-    terminal.writeOutput([
+    terminal.replaceLastLine(
       {
-        text: `Password: ${typedPassword}`,
+        text: `${LOGIN_STRINGS.passwordPrompt}${typedPassword}`,
         type: 'text' as const,
       },
-    ]);
+      i === LOGIN_DATA.passwordLength - 1
+    );
   }
 
   await sleep(600);

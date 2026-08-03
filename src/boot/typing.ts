@@ -1,10 +1,9 @@
 /**
  * Shared typing animation helpers for boot phases.
  *
- * All effects use the Terminal interface (append-only output).
- * "Cascade typing" prints progressively longer strings as new lines,
- * creating a terminal-style typing effect without needing a
- * "replace last line" API.
+ * Typing effects write one line, then rewrite it in place per character
+ * via Terminal.replaceLastLine, so text grows horizontally like a real
+ * terminal instead of cascading down the screen.
  */
 
 import type { Terminal, OutputLine } from '../types/terminal.ts';
@@ -23,27 +22,27 @@ export function writeLine(
   terminal.writeOutput([{ text, type }]);
 }
 
-/**
- * Cascade-type text into the terminal.
- * Each character step is emitted as a new line, creating a
- * vertical cascade that simulates real-time typing.
- */
+/** Type text one character at a time onto a single line. */
 export async function typeText(
   terminal: Terminal,
   text: string,
   type: OutputLine['type'] = 'text',
   charDelayMs = 30
 ): Promise<void> {
-  for (let i = 1; i <= text.length; i++) {
-    terminal.writeOutput([{ text: text.slice(0, i), type }]);
+  if (text.length === 0) {
+    return;
+  }
+
+  terminal.writeOutput([{ text: text.slice(0, 1), type }]);
+  await sleep(charDelayMs);
+
+  for (let i = 2; i <= text.length; i++) {
+    terminal.replaceLastLine({ text: text.slice(0, i), type }, i === text.length);
     await sleep(charDelayMs);
   }
 }
 
-/**
- * Type a prefix, then "type" a value after it with a small delay.
- * Useful for "login: guest" style animations.
- */
+/** Type a value after a static prefix, all on one line ("login: guest"). */
 export async function typePrefixed(
   terminal: Terminal,
   prefix: string,
@@ -51,19 +50,23 @@ export async function typePrefixed(
   type: OutputLine['type'] = 'text',
   charDelayMs = 40
 ): Promise<void> {
-  const full = prefix + value;
-  const prefixLen = prefix.length;
+  if (value.length === 0) {
+    terminal.writeOutput([{ text: prefix, type }]);
+    return;
+  }
 
-  for (let i = prefixLen + 1; i <= full.length; i++) {
-    terminal.writeOutput([{ text: full.slice(0, i), type }]);
+  const full = prefix + value;
+
+  terminal.writeOutput([{ text: full.slice(0, prefix.length + 1), type }]);
+  await sleep(charDelayMs);
+
+  for (let i = prefix.length + 2; i <= full.length; i++) {
+    terminal.replaceLastLine({ text: full.slice(0, i), type }, i === full.length);
     await sleep(charDelayMs);
   }
 }
 
-/**
- * Animate a numeric counter from start to end, appending each
- * intermediate value as a new line.
- */
+/** Count from start to end in place on a single line. */
 export async function animateCounter(
   terminal: Terminal,
   prefix: string,
@@ -74,8 +77,16 @@ export async function animateCounter(
   type: OutputLine['type'] = 'text',
   delayMs = 60
 ): Promise<void> {
-  for (let value = start; value <= end; value += step) {
-    terminal.writeOutput([{ text: `${prefix}${value}${suffix}`, type }]);
+  if (step <= 0 || start > end) {
+    return;
+  }
+
+  terminal.writeOutput([{ text: `${prefix}${start}${suffix}`, type }]);
+  await sleep(delayMs);
+
+  for (let value = start + step; value <= end; value += step) {
+    const isLast = value + step > end;
+    terminal.replaceLastLine({ text: `${prefix}${value}${suffix}`, type }, isLast);
     await sleep(delayMs);
   }
 }

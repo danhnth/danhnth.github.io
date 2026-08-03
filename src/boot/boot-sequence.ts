@@ -7,7 +7,6 @@
  * Features:
  * - Checks localStorage 'crt-boot-seen' to skip full boot on revisit
  * - Emits events: 'boot:start', 'boot:phase', 'boot:complete'
- * - Calls warmupShaders() during BIOS POST phase
  * - skip() jumps to shell-ready
  */
 
@@ -18,7 +17,6 @@ import { hardwareDetectPhase } from './phases/hardware-detect';
 import { kernelLoadPhase } from './phases/kernel-load';
 import { initSystemPhase } from './phases/init-system';
 import { loginPhase } from './phases/login';
-import { warmupShaders } from './warmup';
 import { setBootTime } from '../utils/boot-time';
 
 const BOOT_CONFIG: BootConfig = {
@@ -165,11 +163,6 @@ export class BootSequence {
 
       this.currentPhase = step.phase;
       this.emit('boot:phase');
-
-      // Warm up shaders during BIOS POST phase
-      if (step.phase === 'bios-post') {
-        warmupShaders();
-      }
 
       await step.render(this.terminal);
     }

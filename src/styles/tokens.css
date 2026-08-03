@@ -23,13 +23,13 @@
   --crt-selection-text: #0a0a0a;
 
   /* ── Phosphor Glow / Bloom ─────────────────────────────── */
-  --crt-glow-spread: 2px;
-  --crt-glow-color: rgba(51, 255, 102, 0.6);
-  --crt-glow-color-dim: rgba(51, 255, 102, 0.3);
-  --crt-bloom-spread-1: 1px;
-  --crt-bloom-spread-2: 3px;
-  --crt-bloom-spread-3: 8px;
-  --crt-bloom-spread-4: 16px;
+  --crt-glow-spread: 3px;
+  --crt-glow-color: rgba(51, 255, 102, 0.8);
+  --crt-glow-color-dim: rgba(51, 255, 102, 0.5);
+  --crt-bloom-spread-1: 2px;
+  --crt-bloom-spread-2: 6px;
+  --crt-bloom-spread-3: 12px;
+  --crt-bloom-spread-4: 24px;
 
   /* ── RGB Shift (Chromatic Aberration) ────────────────────── */
   --crt-rgb-offset: 1.5px;
@@ -37,13 +37,13 @@
   --crt-rgb-blue: rgba(0, 80, 255, 0.4);
 
   /* ── Scanline ──────────────────────────────────────────── */
-  --crt-scanline-opacity: 0.15;
+  --crt-scanline-opacity: 0.25;
   --crt-scanline-gap: 2px;
   --crt-scanline-dark: 0.18;
   --crt-scanline-light: 0.02;
 
   /* ── Flicker ───────────────────────────────────────────── */
-  --crt-flicker-intensity: 0.03;
+  --crt-flicker-intensity: 0.05;
   --crt-flicker-speed: 0.1s;
 
   /* ── Barrel Distortion / Curvature ─────────────────────── */
@@ -51,7 +51,7 @@
   --crt-overscan: -3px;
 
   /* ── Screen Brightness ─────────────────────────────────── */
-  --crt-brightness: 1.15;
+  --crt-brightness: 1.25;
 
   /* ── Jitter ──────────────────────────────────────────────── */
   --crt-jitter-x: 0.3px;
@@ -59,34 +59,36 @@
   --crt-jitter-speed: 0.08s;
 
   /* ── Burn-in / Ghosting ────────────────────────────────── */
-  --crt-ghost-opacity: 0.04;
+  --crt-ghost-opacity: 0.08;
   --crt-ghost-blur: 2px;
 
   /* ── Static Noise ──────────────────────────────────────── */
-  --crt-noise-opacity: 0.03;
+  --crt-noise-opacity: 0.06;
 
   /* ── Scanning Beam ─────────────────────────────────────── */
   --crt-beam-height: 120px;
   --crt-beam-blur: 8px;
   --crt-beam-speed: 8s;
-  --crt-beam-opacity: 0.5;
+  --crt-beam-opacity: 0.7;
 
   /* ── Horizontal Sync ───────────────────────────────────── */
   --crt-hsync-intensity: 0.02;
 
   /* ── Typography ────────────────────────────────────────── */
-  --crt-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --crt-font-size-xs: 0.75rem;    /* 12px */
-  --crt-font-size-sm: 0.875rem;   /* 14px */
-  --crt-font-size-base: 1rem;     /* 16px */
-  --crt-font-size-md: 1.125rem;   /* 18px */
-  --crt-font-size-lg: 1.25rem;    /* 20px */
-  --crt-font-size-xl: 1.5rem;     /* 24px */
-  --crt-font-size-2xl: 1.875rem;  /* 30px */
-  --crt-font-size-3xl: 2.25rem;   /* 36px */
-  --crt-line-height: 1.6;
-  --crt-line-height-tight: 1.2;
-  --crt-letter-spacing: 0.05em;
+  /* A hardware text terminal has ONE glyph size on a fixed character
+     cell. Every line of output must land on the same grid, otherwise the
+     aperture-grille mask in the shader cannot align to real pixel rows. */
+  --crt-font-mono: 'JetBrains Mono', monospace;
+  --crt-font-size-base: 1rem;     /* 16px — the only glyph size */
+  --crt-cell-height: 1.25;        /* 20px line box: VGA-like 16px glyph + leading */
+  --crt-line-height: var(--crt-cell-height);
+  --crt-line-height-tight: var(--crt-cell-height);
+  --crt-letter-spacing: 0;
+
+  /* Touch-keyboard chrome is physical hardware, not screen text, so it is
+     exempt from the character-cell grid. */
+  --crt-key-label-size: 0.875rem;
+  --crt-key-label-size-sm: 0.75rem;
 
   /* ── Spacing ───────────────────────────────────────────── */
   --crt-space-1: 0.25rem;   /* 4px */
