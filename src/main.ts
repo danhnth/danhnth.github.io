@@ -4,6 +4,7 @@ import './styles/terminal.css';
 import './styles/mobile.css';
 import './styles/control-panel.css';
 import './effects/css-fallback.css';
+import './styles/modern.css';
 
 import { Terminal } from './terminal/terminal.ts';
 import { CommandRegistry } from './commands/registry.ts';
@@ -14,6 +15,11 @@ import { detectGPUTier, getCRTConfig } from './utils/gpu-detect.ts';
 import { BootSequence } from './boot/boot-sequence.ts';
 import { initAudioIntegration } from './audio/integration.ts';
 import { TouchKeyboard } from './terminal/touch-keyboard.ts';
+import {
+  applyDisplayModeClass,
+  resolveDisplayMode,
+  type DisplayMode,
+} from './utils/display-mode.ts';
 import type { CommandContext } from './types/commands.ts';
 
 // Import all commands
@@ -29,11 +35,17 @@ import { catCommand } from './commands/impl/cat.ts';
 import { certsCommand } from './commands/impl/certs.ts';
 import { contactCommand } from './commands/impl/contact.ts';
 import { resumeCommand } from './commands/impl/resume.ts';
+import { displayCommand } from './commands/impl/display.ts';
 
 // Import data for CommandContext
 import * as data from './data/index.ts';
 
 async function main(): Promise<void> {
+  // 0. Resolve display mode (URL override > persisted > CRT default) before
+  // any paint so the chosen theme applies from the first frame.
+  const displayMode = resolveDisplayMode();
+  applyDisplayModeClass(displayMode);
+
   // 1. Detect GPU tier and initialize CRT effects
   const gpuTier = detectGPUTier();
   const crtConfig = getCRTConfig(gpuTier);
@@ -75,22 +87,35 @@ async function main(): Promise<void> {
   registry.register(certsCommand);
   registry.register(contactCommand);
   registry.register(resumeCommand);
+  registry.register(displayCommand);
 
   // Register any plugin commands
   for (const cmd of pluginManager.getAllCommands()) {
     registry.register(cmd);
   }
 
-  // 7. Initialize CRT effects
+  // 7. Initialize CRT effects (skipped entirely when the user opted out)
   const crtManager = new CRTEffectsManager(gpuTier, crtConfig);
   crtManager.setTerminalElement(terminal.getElement());
-  crtManager.initialize();
-  crtManager.enable();
+  if (displayMode === 'crt') {
+    crtManager.initialize();
+    crtManager.enable();
+  }
 
   // 7b. Live shader tuning panel (F9)
   new ShaderControlPanel(crtConfig, (tuned) => {
     crtManager.updateConfig(tuned);
   });
+
+  // 7c. Live display-mode switches: the `display` command dispatches this.
+  document.addEventListener('crt:display-change', ((event: Event) => {
+    const mode = (event as CustomEvent<DisplayMode>).detail;
+    if (mode === 'modern') {
+      crtManager.setModernMode();
+    } else {
+      crtManager.setCRTMode();
+    }
+  }) as EventListener);
 
   // 8. Initialize touch keyboard (mobile)
   new TouchKeyboard(terminal.getElement(), (key) => {

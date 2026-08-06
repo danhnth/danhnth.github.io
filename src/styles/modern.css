@@ -1,0 +1,111 @@
+/* ============================================================
+   MODERN TERMINAL — Opt-out theme for the CRT shader look.
+   Activated by the `crt-mode--modern` class on <html> (see
+   src/utils/display-mode.ts). Neutral flat dark palette with
+   GitHub-Dark-inspired accent colors; no phosphor, scanlines,
+   bloom, curvature, flicker, or glow. The effect pipeline is
+   also disabled in JS — this file only re-themes the DOM.
+   ============================================================ */
+
+/* ── Neutral dark token overrides ────────────────────────── */
+html.crt-mode--modern {
+  --crt-green: #e6edf3;          /* body text: near-white */
+  --crt-green-bright: #7ee787;   /* prompt accent */
+  --crt-green-dim: #30363d;      /* borders / muted */
+  --crt-bg: #0d1117;
+  --crt-bg-dark: #161b22;
+  --crt-bg-light: #010409;
+  --crt-error: #ff7b72;
+  --crt-success: #7ee787;
+  --crt-link: #58a6ff;
+  --crt-link-hover: #79c0ff;
+  --crt-ascii: #8b949e;
+  --crt-heading: #7ee787;
+  --crt-dim: #8b949e;
+  --crt-selection-bg: #264f78;
+  --crt-selection-text: #f0f6fc;
+}
+
+/* ── Terminal chrome: flat panel instead of CRT bezel ────── */
+html.crt-mode--modern .crt-terminal {
+  aspect-ratio: auto;
+  height: min(80vh, 760px);
+  border-radius: 8px;
+  border: 1px solid #3d444d;
+  background-color: var(--crt-bg);
+  text-shadow: none;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  /* Crisp text: undo the CRT hard-edge glyph rendering. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: auto;
+  font-variant-ligatures: normal;
+  font-kerning: normal;
+}
+
+/* ── Input line: hairline separator instead of CRT base ── */
+html.crt-mode--modern .crt-terminal__input-line {
+  border-top: 1px solid #21262d;
+  background-color: var(--crt-bg-dark);
+}
+
+/* The container div is focusable for keyboard capture; its default focus
+   ring renders as a subpixel smudge over the 1px border. The blinking
+   caret is the focus indicator here, same as a real terminal emulator. */
+html.crt-mode--modern .crt-terminal:focus,
+html.crt-mode--modern .crt-terminal:focus-visible {
+  outline: none;
+}
+
+html.crt-mode--modern .crt-terminal__prompt,
+html.crt-mode--modern .crt-terminal__input {
+  color: var(--crt-green);
+}
+
+html.crt-mode--modern .crt-terminal__input {
+  caret-color: var(--crt-green-bright);
+}
+
+/* ── Cursor: quiet block, accent-colored ──────────────────── */
+html.crt-mode--modern .crt-terminal__cursor {
+  background-color: var(--crt-green-bright);
+}
+
+/* ── Selection ────────────────────────────────────────────── */
+html.crt-mode--modern .crt-terminal ::selection {
+  background-color: var(--crt-selection-bg);
+  color: var(--crt-selection-text);
+}
+
+/* ── Scrollbar: neutral ───────────────────────────────────── */
+html.crt-mode--modern .crt-terminal__output {
+  scrollbar-color: #30363d var(--crt-bg-dark);
+}
+
+html.crt-mode--modern .crt-terminal__output::-webkit-scrollbar-track {
+  background: var(--crt-bg-dark);
+}
+
+html.crt-mode--modern .crt-terminal__output::-webkit-scrollbar-thumb {
+  background: #30363d;
+}
+
+html.crt-mode--modern .crt-terminal__output::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* ── Headings tinted green reads as "accent", keep muted help ── */
+html.crt-mode--modern .output-heading,
+html.crt-mode--modern .crt-line--heading {
+  color: var(--crt-heading);
+}
+
+/* ── Reduced-motion contract carries over ─────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html.crt-mode--modern .crt-terminal__cursor {
+    animation: none;
+    opacity: 1;
+  }
+}
