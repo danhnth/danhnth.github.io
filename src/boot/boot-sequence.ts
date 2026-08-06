@@ -150,6 +150,7 @@ export class BootSequence {
 
     this.terminal.writeOutput([
       { text: 'Ready.', type: 'success' },
+      { text: "Tip: Type 'help' for available commands", type: 'dim' },
       { text: '', type: 'text' },
     ]);
 

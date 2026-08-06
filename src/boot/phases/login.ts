@@ -58,6 +58,7 @@ export async function loginPhase(terminal: Terminal): Promise<void> {
       text: `${LOGIN_STRINGS.welcome}, ${profile.name}.`,
       type: 'text' as const,
     },
+    { text: "Tip: Type 'help' for available commands", type: 'dim' as const },
     { text: '', type: 'text' as const },
   ]);
 
