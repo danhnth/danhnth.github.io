@@ -71,7 +71,9 @@
   color: var(--crt-green-bright);
   font-family: var(--crt-font-mono);
   font-size: var(--crt-font-size-base);
-  margin-right: var(--crt-terminal-prompt-gap);
+  /* The prompt text already ends with a space (PROMPT_TEXT = '...~$ '), so any
+     extra margin here doubles the gap and pushes the cursor ~1.8 cells away. */
+  margin-right: 0;
   user-select: none;
   flex-shrink: 0;
 }

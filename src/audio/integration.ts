@@ -59,6 +59,11 @@ export function initAudioIntegration(
 
   indicator.addEventListener('click', () => {
     audioManager.initFromGesture();
+    // First click initializes audio; once ready the indicator acts as a
+    // mute toggle instead of being stuck showing SND ON forever.
+    if (audioManager.isReady()) {
+      audioManager.setMuted(!audioManager.isMuted());
+    }
     updateIndicator(indicator);
   });
 
