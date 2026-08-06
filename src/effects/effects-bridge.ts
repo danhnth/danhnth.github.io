@@ -187,6 +187,22 @@ export class EffectsBridge {
 
     const rect = this.terminalElement.getBoundingClientRect();
     this.webglPipeline.resize(rect.width, rect.height);
+
+    // The texture capture paints the terminal's own border as the bezel ring,
+    // so the overlay must cover the full border box — a padding-box-only
+    // canvas would leave the DOM border visible beside it (double frame).
+    // Explicit pixel sizes, not calc(): Chromium drops calc() additions on
+    // canvas elements.
+    const canvas = this.webglPipeline.getCanvas();
+    if (canvas) {
+      const cs = window.getComputedStyle(this.terminalElement);
+      const borderLeft = parseFloat(cs.borderLeftWidth) || 0;
+      const borderTop = parseFloat(cs.borderTopWidth) || 0;
+      canvas.style.top = `-${borderTop}px`;
+      canvas.style.left = `-${borderLeft}px`;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    }
     this.invalidateContent();
   }
 

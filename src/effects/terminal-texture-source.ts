@@ -181,7 +181,12 @@ export class TerminalTextureSource {
     if (rects.length === 0) return;
 
     const style = getComputedStyle(parent);
-    ctx.font = style.font;
+    // style.font serializes to "" when font-kerning / font-variant-ligatures
+    // are set (Chromium quirk — this terminal sets both). Assigning "" to
+    // ctx.font is ignored, leaving the default 10px sans-serif and text ~40%
+    // narrower than the DOM, which detaches the cursor block from the prompt.
+    ctx.font =
+      `${style.fontStyle} ${style.fontWeight} ${style.fontSize}/${style.lineHeight} ${style.fontFamily}`;
     ctx.fillStyle = style.color;
     const metrics = ctx.measureText('M');
     const ascent = metrics.fontBoundingBoxAscent || rects[0].height * 0.8;

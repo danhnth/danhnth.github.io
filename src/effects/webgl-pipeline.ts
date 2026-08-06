@@ -135,6 +135,10 @@ export class WebGLPipeline {
     this.canvas.style.left = '0';
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
+    // reset.css caps canvas at max-width:100% (a responsive-image reset); the
+    // overlay must be able to stretch over the terminal's full border box.
+    this.canvas.style.maxWidth = 'none';
+    this.canvas.style.maxHeight = 'none';
     this.canvas.style.pointerEvents = 'none';
 
     const gl = this.canvas.getContext('webgl', {
