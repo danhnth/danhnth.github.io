@@ -33,6 +33,10 @@ export class CRTEffectsManager {
   private isEnabled = false;
   private reducedMotion = false;
   private highContrast = false;
+  /** Pre-demotion tier/config so `display crt` can rebuild the FULL shader
+   *  instead of the pinned minimal config. */
+  private demotedTier: GPUTier | null = null;
+  private demotedConfig: CRTConfig | null = null;
 
   constructor(tier: GPUTier, config: CRTConfig) {
     this.tier = tier;
@@ -142,6 +146,11 @@ export class CRTEffectsManager {
     }
     this.bridge?.detach();
     this.bridge = null;
+    // Remember what we demoted FROM so an explicit `display crt` can rebuild
+    // the full shader instead of being trapped in the minimal config.
+    this.demotedTier = this.tier;
+    this.demotedConfig = this.config;
+    this.isEnabled = false;
     // Static variant only: animated CSS overlays cost more than the WebGL
     // quad on weak GPUs, and demotion is one-way.
     this.tier = 'minimal';
@@ -258,6 +267,53 @@ export class CRTEffectsManager {
 
     this.removeCSSFallback();
     this.terminalElement = null;
+  }
+
+  /**
+   * Switch to the plain, non-CRT display mode: stop the watchdog, detach the
+   * WebGL bridge, and remove every CRT overlay element/class. The terminal
+   * DOM stays fully interactive — only the effects layer goes away.
+   */
+  setModernMode(): void {
+    if (!this.terminalElement) return;
+    this.log('display: modern (effects off)');
+
+    this.watchdog?.stop();
+    this.watchdog = null;
+
+    if (this.contextLossTimer !== null) {
+      clearTimeout(this.contextLossTimer);
+      this.contextLossTimer = null;
+    }
+
+    this.bridge?.disable();
+    this.bridge?.detach();
+    this.bridge = null;
+
+    this.removeCSSFallback();
+    this.isEnabled = false;
+  }
+
+  /**
+   * Re-enable the CRT look after setModernMode(): re-run the optimistic
+   * WebGL initialization (with CSS-fallback demotion on real failure).
+   * Idempotent — a repeated call while the pipeline is already live is a
+   * no-op instead of stacking a second bridge/canvas/watchdog.
+   */
+  setCRTMode(): void {
+    if (!this.terminalElement || this.bridge || this.isEnabled) return;
+    this.log('display: crt (effects on)');
+    // Recover from a previous demotion: rebuild with the FULL config instead
+    // of the pinned minimal one, and drop the CSS-fallback classes.
+    if (this.demotedTier !== null) {
+      this.tier = this.demotedTier;
+      this.config = this.demotedConfig ?? this.normalizeConfig(getCRTConfig(this.demotedTier));
+      this.demotedTier = null;
+      this.demotedConfig = null;
+      this.removeCSSFallback();
+    }
+    this.initialize();
+    this.enable();
   }
 
   private log(msg: string): void {
